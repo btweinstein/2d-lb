@@ -29,7 +29,7 @@ NUM_JUMPERS = 9
 class Pipe_Flow(object):
     """2d pipe flow with D2Q9"""
 
-    def __init__(self, omega=.99, lx=400, ly=400, dr=None, dt = None, deltaP=None):
+    def __init__(self, omega=.99, lx=400, ly=400, dr=None, dt = None,rho_fluid=None, deltaP=None):
         ### User input parameters
         self.lx = lx # Grid not including boundary in x
         self.ly = ly # Grid not including boundary in y
@@ -38,6 +38,8 @@ class Pipe_Flow(object):
         else: self.dr = dr
         if dt is None: self.dt = 1.
         else: self.dt = dt
+        if rho_fluid is None: self.rho_fluid = 1.0
+        else: self.rho_fluid = rho_fluid
         if deltaP is None: self.deltaP = -1.0
         else: self.deltaP = deltaP
 
@@ -48,8 +50,12 @@ class Pipe_Flow(object):
         self.ny = self.ly + 1 # Total size of grid in y including boundary
 
         # Based on deltaP, set rho at the edges, as P = rho/3
-        self.inlet_rho = 1.
-        self.outlet_rho = cs2*self.deltaP + self.inlet_rho # deltaP is negative!
+        # Get dimensionless pressure change
+        mass_per_cell = self.rho_fluid*self.dr**3
+        self.deltaP_sim = self.deltaP/(mass_per_cell/(dr*dt**2))
+        self.delta_rho = np.abs(cs2*self.deltaP_sim)
+        self.inlet_rho = 2*self.delta_rho #arbitrary
+        self.outlet_rho = self.delta_rho # deltaP is negative!
 
         ## Initialize hydrodynamic variables
         self.rho = None # Density
