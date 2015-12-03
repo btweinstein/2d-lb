@@ -9,6 +9,7 @@
 from libc.stdio cimport printf
 import numpy as np
 cimport numpy as np
+import skimage as ski
 
 ##########################
 ##### D2Q9 parameters ####
@@ -300,27 +301,85 @@ class Pipe_Flow(object):
             self.collide_particles() # Relax the nonequilibrium fields
 
 
-class Pipe_Flow_Obstacles(Pipe_Flow):
+    def get_fields(self):
 
-    def __init__(self, *args, obstacle_mask=None, **kwargs):
+        results={}
+        results['f'] = self.f
+        results['u'] = self.u
+        results['v'] = self.v
+        results['rho'] = self.rho
+        results['feq'] = self.feq
+        return results
 
-        self.obstacle_mask = obstacle_mask
+    def get_nondim_fields(self):
+        fields = self.get_fields()
+
+        fields['u'] *= self.delta_x/self.delta_t
+        fields['v'] *= self.delta_x/self.delta_t
+
+        return fields
+
+    def get_physical_fields(self):
+        fields = self.get_nondim_fields()
+
+        fields['u'] *= (self.L/self.T)
+        fields['v'] *= (self.L/self.T)
+
+        return fields
+
+
+
+class Pipe_Flow_Cylinder(Pipe_Flow):
+
+    def set_characteristic_length_time(self):
+        """Necessary for subclassing"""
+        self.L = self.phys_cylinder_radius
+        self.T = (8*self.phys_rho*self.phys_visc*self.L)/(np.abs(self.phys_pressure_grad)*self.phys_diameter**2)
+
+    def initialize_grid_dims(self):
+        """Necessary for subclassing"""
+
+        self.lx = int(np.ceil((self.phys_pipe_length / self.L)*self.N))
+        self.ly = int(np.ceil((self.phys_diameter / self.L)*self.N))
+
+        self.nx = self.lx + 1 # Total size of grid in x including boundary
+        self.ny = self.ly + 1 # Total size of grid in y including boundary
+
+        ## Initialize the obstacle mask
+        self.obstacle_mask = np.zeros((self.nx, self.ny), dtype=np.int32, order='F')
+
+        # Initialize the obstacle in the correct place
+        x_cylinder = self.N * self.phys_cylinder_center[0]/self.L
+        y_cylinder = self.N * self.phys_cylinder_center[1]/self.L
+
+        circle = ski.draw.circle(x_cylinder, y_cylinder, self.N)
+        self.obstacle_mask[circle[0], circle[1]] = 1
+
+    def __init__(self, cylinder_center = None, cylinder_radius=None, **kwargs):
+        """Obstacle mask should be ones and zeros."""
+
+        assert (cylinder_center is not None)
+        assert (cylinder_radius is not None) # If there are no obstacles, this will definitely not run.
+
+        self.phys_cylinder_center = cylinder_center
+        self.phys_cylinder_radius = cylinder_radius
+
+        self.obstacle_mask = None
+        super(Pipe_Flow_Cylinder, self).__init__(**kwargs)
         self.obstacle_pixels = np.where(self.obstacle_mask)
 
-        super(Pipe_Flow_Obstacles, self).__init__(*args, **kwargs)
-
     def init_hydro(self):
-        super(Pipe_Flow_Obstacles, self).init_hydro()
+        super(Pipe_Flow_Cylinder, self).init_hydro()
         self.u[self.obstacle_mask] = 0
         self.v[self.obstacle_mask] = 0
 
     def update_hydro(self):
-        super(Pipe_Flow_Obstacles, self).update_hydro()
+        super(Pipe_Flow_Cylinder, self).update_hydro()
         self.u[self.obstacle_mask] = 0
         self.v[self.obstacle_mask] = 0
 
     def move_bcs(self):
-        Pipe_Flow.move_bcs(self)
+        super(Pipe_Flow_Cylinder, self).move_bcs()
 
         # Now bounceback on the obstacle
         cdef long[:] x_list = self.obstacle_pixels[0]

@@ -198,6 +198,7 @@ class Pipe_Flow(object):
         print 'This context is associated with ', len(self.context.devices), 'devices'
         self.queue = cl.CommandQueue(self.context, self.context.devices[0],
                                      properties=cl.command_queue_properties.PROFILING_ENABLE)
+        # The opencl file is always stored in the directory above you.
         self.kernels = cl.Program(self.context, open(parent_dir + '/D2Q9.cl').read()).build(options='')
 
     def init_hydro(self):
@@ -328,7 +329,6 @@ class Pipe_Flow(object):
         fields['v'] *= (self.L/self.T)
 
         return fields
-
 
 class Pipe_Flow_Cylinder(Pipe_Flow):
 
