@@ -19,6 +19,7 @@ setup(
     version='0.01',
     package_dir={'':'src'},
     packages=['LB_D2Q9', 'LB_D2Q9_OLD'],
+    include_package_data=True,
     url='',
     license='',
     author='Bryan Weinstein, Matheus C. Fernandes',
