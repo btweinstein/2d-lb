@@ -1,5 +1,5 @@
 import seaborn as sns
-from LB_D2Q9 import pipe_opencl as lb
+from LB_D2Q9_dimensionless import pipe_opencl as lb
 import numpy as np
 
 #### Input to the simulation in SI. ######
