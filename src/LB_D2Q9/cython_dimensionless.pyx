@@ -14,13 +14,14 @@ cimport numpy as np
 ##### D2Q9 parameters ####
 ##########################
 w=np.array([4./9.,1./9.,1./9.,1./9.,1./9.,1./36.,
-            1./36.,1./36.,1./36.]) # weights for directions
-cx=np.array([0,1,0,-1,0,1,-1,-1,1]) # direction vector for the x direction
-cy=np.array([0,0,1,0,-1,1,1,-1,-1]) # direction vector for the y direction
-cs=1/np.sqrt(3)
+            1./36.,1./36.,1./36.], order='F', dtype=np.float32) # weights for directions
+cx=np.array([0,1,0,-1,0,1,-1,-1,1], order='F', dtype=np.int32) # direction vector for the x direction
+cy=np.array([0,0,1,0,-1,1,1,-1,-1], order='F', dtype=np.int32) # direction vector for the y direction
+cs=1./np.sqrt(3)
 cs2 = cs**2
 cs22 = 2*cs2
 cssq = 2.0/9.0
+two_cs4 = 2*cs**4
 
 w0 = 4./9.
 w1 = 1./9.
@@ -31,24 +32,73 @@ NUM_JUMPERS = 9
 class Pipe_Flow(object):
     """2d pipe flow with D2Q9"""
 
-    def __init__(self, omega=.99, lx=400, ly=400, dr=1., dt = 1., deltaP=-.1):
-        ### User input parameters
-        self.lx = lx # Grid not including boundary in x
-        self.ly = ly # Grid not including boundary in y
+    def set_characteristic_length_time(self):
+        """Necessary for subclassing"""
+        self.L = self.phys_diameter
+        self.T = (8*self.phys_rho*self.phys_visc)/(np.abs(self.phys_pressure_grad)*self.L)
 
-        self.omega = omega
+    def initialize_grid_dims(self):
+        """Necessary for subclassing"""
 
-        self.dr = dr
-        self.dt = dt
-        self.deltaP = deltaP
+        self.lx = int(np.ceil((self.phys_pipe_length / self.L)*self.N))
+        self.ly = self.N
 
-        ## Everything else
         self.nx = self.lx + 1 # Total size of grid in x including boundary
         self.ny = self.ly + 1 # Total size of grid in y including boundary
 
-        # Based on deltaP, set rho at the edges, as P = rho*cs^2, so rho=P/cs^2
-        self.inlet_rho = 1.
-        self.outlet_rho = self.deltaP/cs2 + self.inlet_rho # deltaP is negative!
+
+    def __init__(self, diameter=None, rho=None, viscosity=None, pressure_grad=None, pipe_length=None,
+                 N=200, time_prefactor = 1.):
+
+         # Physical units
+        self.phys_diameter = diameter
+        self.phys_rho = rho
+        self.phys_visc = viscosity
+        self.phys_pressure_grad = pressure_grad
+        self.phys_pipe_length = pipe_length
+
+        # Get the characteristic length and time scales for the flow
+        self.L = None
+        self.T = None
+        self.set_characteristic_length_time()
+        print 'Characteristic L:', self.L
+        print 'Characteristic T:', self.T
+
+        # Initialize the reynolds number
+        self.Re = self.L**2/(self.phys_visc*self.T**2)
+        print 'Reynolds number:', self.Re
+
+        # Initialize the lattice to simulate on; see http://wiki.palabos.org/_media/howtos:lbunits.pdf
+        self.N = N # Characteristic length is broken into N pieces
+        self.delta_x = 1./N # How many squares characteristic length is broken into
+        self.delta_t = time_prefactor * self.delta_x**2 # How many time iterations until the characteristic time, should be ~ \delta x^2
+
+        # Initialize grid dimensions
+        self.lx = None
+        self.ly = None
+        self.nx = None
+        self.ny = None
+        self.initialize_grid_dims()
+
+        # Get the non-dimensional pressure gradient
+        nondim_deltaP = (self.T**2/(self.phys_rho*self.L))*self.phys_pressure_grad
+        # Obtain the difference in density (pressure) at the inlet & outlet
+        delta_rho = self.nx*(self.delta_t**2/self.delta_x)*(1./cs2)*nondim_deltaP
+
+        # Assume deltaP is negative. So, outlet will have a smaller density.
+
+        self.outlet_rho = 1.
+        self.inlet_rho = 1. + np.abs(delta_rho)
+
+        print 'inlet rho:' , self.inlet_rho
+        print 'outlet rho:', self.outlet_rho
+
+        self.lb_viscosity = (self.delta_t/self.delta_x**2) * (1./self.Re)
+
+        # Get omega from lb_viscosity
+        self.omega = (self.lb_viscosity/cs2 + 0.5)**-1.
+        print 'omega', self.omega
+        assert self.omega < 2.
 
         ## Initialize hydrodynamic variables
         self.rho = None # Density
@@ -57,29 +107,14 @@ class Pipe_Flow(object):
         self.init_hydro()
 
         # Intitialize the underlying probablistic fields
+
         self.f=np.zeros((NUM_JUMPERS, self.nx, self.ny), dtype=np.float32) # initializing f
         self.feq = np.zeros((NUM_JUMPERS, self.nx, self.ny), dtype=np.float32)
 
         self.update_feq()
         self.init_pop()
 
-        # Based on initial parameters, determine dimensionless numbers
-        self.viscosity = None
-        self.Re = None
-        self.Ma = None
-        self.update_dimensionless_nums()
-
-    def update_dimensionless_nums(self):
-        self.viscosity = (self.dr**2/(3*self.dt))*(self.omega-0.5)
-
-        # Get the reynolds number...based on max in the flow
-        U = np.max(np.sqrt(self.u**2 + self.v**2))
-        L = self.ly*self.dr # Diameter
-        self.Re = U*L/self.viscosity
-
-        # To get the mach number...
-        self.Ma = (self.dr/(L*np.sqrt(3)))*(self.omega-.5)*self.Re
-
+        ###### OLD CYTHON #########
 
     def init_hydro(self):
         nx = self.nx
@@ -245,7 +280,7 @@ class Pipe_Flow(object):
 
         self.f = feq.copy()
         # We now slightly perturb f
-        amplitude = .00
+        amplitude = .001
         perturb = (1. + amplitude*np.random.randn(nx, ny))
         self.f *= perturb
 

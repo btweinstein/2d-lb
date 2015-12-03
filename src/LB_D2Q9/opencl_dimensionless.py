@@ -25,6 +25,7 @@ cs=1./np.sqrt(3)
 cs2 = cs**2
 cs22 = 2*cs2
 two_cs4 = 2*cs**4
+cssq = 2.0/9.0
 
 w0 = 4./9.
 w1 = 1./9.

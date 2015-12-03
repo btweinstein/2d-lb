@@ -5,14 +5,20 @@ import numpy as np
 
 
 extensions = [
-    Extension("LB_D2Q9.pipe_cython",
-              sources=["LB_D2Q9/pipe_cython.pyx"],
-              include_dirs = [np.get_include()])]
+    Extension("LB_D2Q9.cython_dimensionless",
+              sources=["src/LB_D2Q9/cython_dimensionless.pyx"],
+              include_dirs = [np.get_include()]),
+
+    Extension("LB_D2Q9_OLD.pipe_cython",
+              sources=["src/LB_D2Q9_OLD/pipe_cython.pyx"],
+              include_dirs = [np.get_include()])
+]
 
 setup(
     name='2d-lb',
     version='0.01',
-    packages=['LB_D2Q9'],
+    package_dir={'':'src'},
+    packages=['LB_D2Q9', 'LB_D2Q9_OLD'],
     url='',
     license='',
     author='Bryan Weinstein, Matheus C. Fernandes',
