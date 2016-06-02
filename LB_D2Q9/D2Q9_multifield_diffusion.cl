@@ -99,11 +99,14 @@ collide_particles(__global float *f_global,
 
         const int two_d_index = y*nx + x;
 
-        const int three_d_nutrient_index = (num_populations)*ny*nx + two_d_index;
-        const float c = rho_global[three_d_nutrient_index];
+        // Obtain the total density
+        float total_density = 0;
+        for (int field_num=0; field_num < num_fields; field_num++){
+            int three_d_index = field_num*ny*nx + two_d_index;
+            total_density += rho_global[three_d_index]; //TODO: should probably be stored in a buffer...
+        }
 
-        float nutrient_react = 0;
-
+        //Now update each field
         for(int field_num=0; field_num < num_populations; field_num++){ //Loop over populations first
             int three_d_index = field_num*ny*nx + two_d_index;
 
@@ -115,13 +118,11 @@ collide_particles(__global float *f_global,
             float cur_Dg = Dg[field_num];
             float cur_omega = omega[field_num];
 
-            float growth = cur_G * cur_rho * c;
+            float growth = cur_G * cur_rho * (1 - total_density);
             //Use millstein update method for the fluctuating piece
-            float fluctuate = sqrt(cur_Dg*cur_rho*c)*cur_rand;
-            fluctuate += (cur_Dg*c/4.)*(cur_rand*cur_rand - 1.);
+            float fluctuate = sqrt(cur_Dg*cur_rho*(1 + total_density))*cur_rand;
+            //fluctuate += (cur_Dg*c/4.)*(cur_rand*cur_rand - 1.);
             float react = growth + fluctuate;
-
-            nutrient_react -= react;
 
             for(int jump_id=0; jump_id < 9; jump_id++){
                 int four_d_index = jump_id*num_fields*ny*nx + three_d_index;
@@ -140,27 +141,6 @@ collide_particles(__global float *f_global,
                 else{
                     f_global[four_d_index] = new_f;
                 }
-            }
-        }
-
-        // Now act on the nutrient field
-
-        for(int jump_id=0; jump_id < 9; jump_id++){
-            int four_d_index = jump_id*num_fields*ny*nx + three_d_nutrient_index;
-
-            float f = f_global[four_d_index];
-            float feq = feq_global[four_d_index];
-            float cur_w = w[jump_id];
-
-            float relax = f*(1-omega_nutrient) + omega_nutrient*feq;
-
-            float new_f = relax + cur_w*nutrient_react;
-
-            if((c < zero_cutoff) || (new_f < 0)){
-                f_global[four_d_index] = 0;
-            }
-            else{
-                f_global[four_d_index] = new_f;
             }
         }
     }
