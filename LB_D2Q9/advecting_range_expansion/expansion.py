@@ -191,7 +191,7 @@ class Expansion(object):
         self.init_hydro() # Create the hydrodynamic fields
 
         # Allocate the equilibrium distribution fields...the same for populations and nutrient fields
-        feq_host = np.zeros((self.nx, self.ny, self.num_populations + 1, NUM_JUMPERS), dtype=np.float32, order='F')
+        feq_host = np.zeros((self.nx, self.ny, self.num_populations, NUM_JUMPERS), dtype=np.float32, order='F')
         self.feq = cl.Buffer(self.context, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=feq_host)
         # Create feq based on the initial hydrodynamic variables
         self.update_feq()
@@ -201,7 +201,7 @@ class Expansion(object):
         self.init_f()
 
         # Create a temporary buffer for streaming in parallel. Only need one.
-        f_temp_host = np.zeros((self.nx, self.ny, self.num_populations + 1, NUM_JUMPERS), dtype=np.float32, order='F')
+        f_temp_host = np.zeros((self.nx, self.ny, self.num_populations, NUM_JUMPERS), dtype=np.float32, order='F')
         self.f_temporary = cl.Buffer(self.context, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
                                      hostbuf=f_temp_host)
 
@@ -352,7 +352,7 @@ class Expansion(object):
         #### DENSITY #####
 
         # Last density is the nutrient field, always.
-        rho = np.zeros((self.nx, self.ny, self.num_populations + 1), dtype=np.float32, order='F')
+        rho = np.zeros((self.nx, self.ny, self.num_populations), dtype=np.float32, order='F')
 
         # Inoculate well mixed fractions initially to show the effects of stochasticity
         rho[:, :, 0:self.num_populations] = self.rho_amp/self.num_populations
@@ -401,11 +401,11 @@ class Expansion(object):
 
     def init_f(self, amplitude = 0.001):
         """Requires init_feq to be run first."""
-        f = np.zeros((self.nx, self.ny, self.num_populations + 1, NUM_JUMPERS), dtype=np.float32, order='F')
+        f = np.zeros((self.nx, self.ny, self.num_populations, NUM_JUMPERS), dtype=np.float32, order='F')
         cl.enqueue_copy(self.queue, f, self.feq, is_blocking=True)
 
         # We now slightly perturb f
-        perturb = (1. + amplitude * np.random.randn(self.nx, self.ny, self.num_populations + 1, NUM_JUMPERS))
+        perturb = (1. + amplitude * np.random.randn(self.nx, self.ny, self.num_populations, NUM_JUMPERS))
         f *= perturb
 
         # Now send f to the GPU
@@ -426,7 +426,7 @@ class Expansion(object):
         in parallel without copying the temporary buffer back onto f.
         """
 
-        # Annoyingly, f is now four-dimensional. (nx, ny, num_populations +1, NUM_JUMPERS)
+        # Annoyingly, f is now four-dimensional. (nx, ny, num_populations, NUM_JUMPERS)
         self.kernels.move(self.queue, self.two_d_global_size, self.two_d_local_size,
                           self.f, self.f_temporary,
                           self.cx, self.cy,
@@ -483,10 +483,10 @@ class Expansion(object):
         """
         :return: Returns a dictionary of all fields. Transfers data from the GPU to the CPU.
         """
-        f = np.zeros((self.nx, self.ny, self.num_populations + 1, NUM_JUMPERS), dtype=np.float32, order='F')
+        f = np.zeros((self.nx, self.ny, self.num_populations, NUM_JUMPERS), dtype=np.float32, order='F')
         cl.enqueue_copy(self.queue, f, self.f, is_blocking=True)
 
-        feq = np.zeros((self.nx, self.ny, self.num_populations + 1, NUM_JUMPERS), dtype=np.float32, order='F')
+        feq = np.zeros((self.nx, self.ny, self.num_populations, NUM_JUMPERS), dtype=np.float32, order='F')
         cl.enqueue_copy(self.queue, feq, self.feq, is_blocking=True)
 
         u = np.zeros((self.nx, self.ny), dtype=np.float32, order='F')
@@ -495,7 +495,7 @@ class Expansion(object):
         v = np.zeros((self.nx, self.ny), dtype=np.float32, order='F')
         cl.enqueue_copy(self.queue, v, self.v, is_blocking=True)
 
-        rho = np.zeros((self.nx, self.ny, self.num_populations + 1), dtype=np.float32, order='F')
+        rho = np.zeros((self.nx, self.ny, self.num_populations), dtype=np.float32, order='F')
         cl.enqueue_copy(self.queue, rho, self.rho, is_blocking=True)
 
         results={}

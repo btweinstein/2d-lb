@@ -85,7 +85,6 @@ collide_particles(__global float *f_global,
                   __constant float *omega,
                   __constant float *G,
                   __constant float *Dg,
-                  const float omega_nutrient,
                   __constant float *w,
                   const int nx, const int ny, const int num_populations,
                   const float zero_cutoff)
