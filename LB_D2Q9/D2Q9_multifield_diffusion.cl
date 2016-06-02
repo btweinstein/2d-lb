@@ -120,7 +120,7 @@ collide_particles(__global float *f_global,
             float growth = cur_G * cur_rho * (1 - total_density);
             //Use millstein update method for the fluctuating piece
             float fluctuate = sqrt(cur_Dg*cur_rho*(1 + total_density))*cur_rand;
-            //fluctuate += (cur_Dg*c/4.)*(cur_rand*cur_rand - 1.);
+            fluctuate += (cur_Dg/4.)*((1 + total_density) + cur_rho) * (cur_rand*cur_rand - 1);
             float react = growth + fluctuate;
 
             for(int jump_id=0; jump_id < 9; jump_id++){
