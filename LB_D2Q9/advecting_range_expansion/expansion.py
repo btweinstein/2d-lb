@@ -95,7 +95,6 @@ class Expansion(object):
         self.phys_vc = vc
 
         self.phys_Nb = Nb
-        self.phys_Dc = Dc
 
         self.phys_mu_standard = mu_standard
         self.phys_mu_list = np.array(mu_list)
@@ -130,15 +129,11 @@ class Expansion(object):
         self.dim_D_population = None # An array as well
         self.dim_G = None # An array
         self.dim_Dg = None # An array
-        self.dim_D_nutrient = None # A single number
 
         self.lb_D_population = None
         self.omega = None
         self.lb_G = None
         self.lb_Dg = None
-
-        self.lb_D_nutrient = None
-        self.omega_nutrient = None
 
         self.set_field_constants()
 
@@ -238,13 +233,6 @@ class Expansion(object):
         self.omega = (.5 + self.lb_D_population/cs**2)**-1.  # The relaxation time of the jumpers in the simulation
         self.omega = self.omega.astype(np.float32, order='F')
         print 'omega populations:', self.omega
-
-        self.dim_D_nutrient = self.phys_Dc/(4*self.D_standard)
-        print 'dim_D_concentration:', self.dim_D_nutrient
-
-        self.lb_D_nutrient = self.dim_D_nutrient * (self.delta_t / self.delta_x ** 2)
-        self.omega_nutrient = np.float32((.5 + self.lb_D_nutrient/cs**2)**-1.)
-        print 'omega nutrient:', self.omega_nutrient
 
         print 'delta_ts:', self.dim_Dg/self.dim_G**2
         print 'Our delta_t:', self.delta_t
@@ -369,22 +357,19 @@ class Expansion(object):
         # Inoculate well mixed fractions initially to show the effects of stochasticity
         rho[:, :, 0:self.num_populations] = self.rho_amp/self.num_populations
 
-        # circular_mask = np.zeros((self.nx, self.ny), dtype=np.float32, order='F')
-        #
-        # width_in_pixels = np.int((self.phys_z/self.L) * self.N)
-        # print 'Initial droplet is' , width_in_pixels, 'pixels wide'
-        #
-        # rr, cc = ski.draw.circle(self.nx/2, self.ny/2, width_in_pixels, shape=circular_mask.shape)
-        # circular_mask[rr, cc] = 1.0
-        #
-        # rho[:, :, 0:self.num_populations] *= circular_mask[:, :, np.newaxis]
+        circular_mask = np.zeros((self.nx, self.ny), dtype=np.float32, order='F')
+
+        width_in_pixels = np.int((self.phys_z/self.L) * self.N)
+        print 'Initial droplet is' , width_in_pixels, 'pixels wide'
+
+        rr, cc = ski.draw.circle(self.nx/2, self.ny/2, width_in_pixels, shape=circular_mask.shape)
+        circular_mask[rr, cc] = 1.0
+
+        rho[:, :, 0:self.num_populations] *= circular_mask[:, :, np.newaxis]
 
         # Actually, for now, just inoculate linearly...
-        rho[:, 2*self.N:, 0:self.num_populations] = 0
+        # rho[:, 2*self.N:, 0:self.num_populations] = 0
 
-        # Initialize nutrient field to one for now
-        rho[:, :, self.num_populations] = self.concentration_amp
-        rho = rho.astype(np.float32, order='F')
         self.rho = cl.Buffer(self.context, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
                                       hostbuf=rho)
 
