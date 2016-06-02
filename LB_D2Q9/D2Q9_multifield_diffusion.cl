@@ -14,7 +14,7 @@ update_feq(__global __write_only float *feq_global,
     const int x = get_global_id(0);
     const int y = get_global_id(1);
 
-    const int num_fields = num_populations + 1;
+    const int num_fields = num_populations;
 
     const int two_d_index = y*nx + x;
 
@@ -59,7 +59,7 @@ update_hydro(__global float *f_global,
     //Input should be a 2d workgroup!
     const int x = get_global_id(0);
     const int y = get_global_id(1);
-    const int num_fields = num_populations + 1;
+    const int num_fields = num_populations;
 
     if ((x < nx) && (y < ny)){
         const int two_d_index = y*nx + x;
@@ -93,7 +93,7 @@ collide_particles(__global float *f_global,
     //Input should be a 2d workgroup! Loop over the third dimension.
     const int x = get_global_id(0);
     const int y = get_global_id(1);
-    const int num_fields = num_populations + 1;
+    const int num_fields = num_populations;
 
     if ((x < nx) && (y < ny)){
 
@@ -176,7 +176,7 @@ copy_buffer(__global __read_only float *copy_from,
     //Assumes a 2d workgroup
     const int x = get_global_id(0);
     const int y = get_global_id(1);
-    const int num_fields = num_populations + 1;
+    const int num_fields = num_populations;
 
     if ((x < nx) && (y < ny)){
         const int two_d_index = y*nx + x;
@@ -202,7 +202,7 @@ move(__global __read_only float *f_global,
     //Input should be a 2d workgroup!
     const int x = get_global_id(0);
     const int y = get_global_id(1);
-    const int num_fields = num_populations + 1;
+    const int num_fields = num_populations;
 
     if ((x < nx) && (y < ny)){
         for(int jump_id = 0; jump_id < 9; jump_id++){

@@ -399,7 +399,7 @@ class Expansion(object):
                                 cs, self.nx, self.ny, self.num_populations,
                                 self.zero_cutoff).wait()
 
-    def init_f(self, amplitude = 0.00):
+    def init_f(self, amplitude = 0.001):
         """Requires init_feq to be run first."""
         f = np.zeros((self.nx, self.ny, self.num_populations + 1, NUM_JUMPERS), dtype=np.float32, order='F')
         cl.enqueue_copy(self.queue, f, self.feq, is_blocking=True)
@@ -456,7 +456,6 @@ class Expansion(object):
         self.kernels.collide_particles(self.queue, self.two_d_global_size, self.two_d_local_size,
                                 self.f, self.feq, self.rho, self.random_normal.data,
                                 self.omega_buf, self.lb_G_buf, self.lb_Dg_buf,
-                                self.omega_nutrient,
                                 self.w, self.nx, self.ny, self.num_populations,
                                 self.zero_cutoff).wait()
 
