@@ -135,8 +135,8 @@ class Surfactant_Nutrient_Wave(object):
         self.two_d_local_size = two_d_local_size        # The local size to be used for 2-d workgroups
         self.three_d_local_size = three_d_local_size    # The local size to be used for 3-d workgroups
 
-        self.two_d_global_size = get_divisible_global((self.nx, self.ny), self.two_d_local_size)
-        self.three_d_global_size = get_divisible_global((self.nx, self.ny, 9), self.three_d_local_size)
+        self.two_d_global_size = get_divisible_global((self.ny, self.nx), self.two_d_local_size)
+        self.three_d_global_size = get_divisible_global((self.ny, self.nx, 9), self.three_d_local_size)
 
         print '2d global:' , self.two_d_global_size
         print '2d local:' , self.two_d_local_size
@@ -170,7 +170,7 @@ class Surfactant_Nutrient_Wave(object):
         self.init_hydro() # Create the hydrodynamic fields, and also intialize the poisson solver
 
         # Intitialize the underlying feq equilibrium field
-        feq_host = np.zeros((self.nx, self.ny, self.num_populations, NUM_JUMPERS), dtype=np.float32, order='F')
+        feq_host = np.zeros((self.ny, self.nx, self.num_populations, NUM_JUMPERS), dtype=np.float32, order='F')
         self.feq = cl.array.to_device(self.queue, feq_host)
 
         self.update_feq() # Based on the hydrodynamic fields, create feq
@@ -264,7 +264,7 @@ class Surfactant_Nutrient_Wave(object):
         # Now initialize the gaussian
         xvalues = np.arange(nx)
         yvalues = np.arange(ny)
-        Y, X = np.meshgrid(yvalues, xvalues)
+        X, Y = np.meshgrid(xvalues, yvalues)
         X = X.astype(np.float)
         Y = Y.astype(np.float)
 
@@ -276,7 +276,7 @@ class Surfactant_Nutrient_Wave(object):
         self.Y = deltaY / self.N
 
         #### DENSITY #####
-        rho_host = np.zeros((nx, ny, self.num_populations), dtype=np.float32, order='F')
+        rho_host = np.zeros((ny, nx, self.num_populations), dtype=np.float32, order='F')
         # Population field
         rho_host[:, :, self.pop_index] = np.exp(-(self.X**2 + self.Y**2)/self.R0**2)
 
@@ -330,7 +330,7 @@ class Surfactant_Nutrient_Wave(object):
 
         # We now slightly perturb f. This is actually dangerous, as concentration can grow exponentially fast
         # from sall fluctuations. Sooo...be careful.
-        perturb = (1. + amplitude*np.random.randn(nx, ny, self.num_populations, NUM_JUMPERS))
+        perturb = (1. + amplitude*np.random.randn(ny, nx, self.num_populations, NUM_JUMPERS))
         f_host *= perturb
 
         # Now send f to the GPU
