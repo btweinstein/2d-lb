@@ -12,10 +12,10 @@
 
 __kernel void
 update_feq_fluid(
-    __global __write_only float *feq_global,
-    __global __read_only float *rho_global,
-    __global __read_only float *u_bary_global,
-    __global __read_only float *v_bary_global,
+    __global  float *feq_global,
+    __global  float *rho_global,
+    __global  float *u_bary_global,
+    __global  float *v_bary_global,
     __constant float *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
@@ -66,12 +66,12 @@ update_feq_fluid(
 __kernel void
 collide_particles_fluid(
     __global float *f_global,
-    __global __read_only float *feq_global,
-    __global __read_only float *rho_global,
-    __global __read_only float *u_bary_global,
-    __global __read_only float *v_bary_global,
-    __global __read_only float *Gx_global,
-    __global __read_only float *Gy_global,
+    __global  float *feq_global,
+    __global  float *rho_global,
+    __global  float *u_bary_global,
+    __global  float *v_bary_global,
+    __global  float *Gx_global,
+    __global  float *Gy_global,
     const float omega,
     __constant float *w_arr,
     __constant int *cx_arr,
@@ -125,7 +125,7 @@ add_eating_collision(
     const int eatee_index,
     const float eat_rate,
     __global float *f_global,
-    __global __read_only float *rho_global,
+    __global  float *rho_global,
     __constant float *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
@@ -164,10 +164,10 @@ __kernel void
 update_bary_velocity(
     __global float *u_bary_global,
     __global float *v_bary_global,
-    __global __read_only float *rho_global,
-    __global __read_only float *f_global,
-    __global __read_only float *Gx_global,
-    __global __read_only float *Gy_global,
+    __global  float *rho_global,
+    __global  float *f_global,
+    __global  float *Gx_global,
+    __global  float *Gy_global,
     __constant float *tau_arr,
     __constant float *w_arr,
     __constant int *cx_arr,
@@ -215,12 +215,12 @@ update_bary_velocity(
 
 __kernel void
 update_hydro_fluid(
-    __global __read_only float *f_global,
+    __global  float *f_global,
     __global float *rho_global,
     __global float *u_global,
     __global float *v_global,
-    __global __read_only float *Gx_global,
-    __global __read_only float *Gy_global,
+    __global  float *Gx_global,
+    __global  float *Gy_global,
     __constant float *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
@@ -269,8 +269,8 @@ update_hydro_fluid(
 }
 
 __kernel void
-move_periodic(__global __read_only float *f_global,
-              __global __write_only float *f_streamed_global,
+move_periodic(__global  float *f_global,
+              __global  float *f_streamed_global,
               __constant int *cx,
               __constant int *cy,
               const int nx, const int ny,
@@ -312,8 +312,8 @@ move_periodic(__global __read_only float *f_global,
 
 __kernel void
 move(
-    __global __read_only float *f_global,
-    __global __write_only float *f_streamed_global,
+    __global  float *f_global,
+    __global  float *f_streamed_global,
     __constant int *cx,
     __constant int *cy,
     const int nx, const int ny,
@@ -350,7 +350,7 @@ move(
 
 __kernel void
 move_open_bcs(
-    __global __read_only float *f_global,
+    __global  float *f_global,
     const int nx, const int ny,
     const int cur_field,
     const int num_populations,
@@ -453,8 +453,8 @@ move_open_bcs(
 
 __kernel void
 copy_streamed_onto_f(
-    __global __write_only float *f_streamed_global,
-    __global __read_only float *f_global,
+    __global  float *f_streamed_global,
+    __global  float *f_global,
     __constant int *cx,
     __constant int *cy,
     const int nx, const int ny,
@@ -589,7 +589,7 @@ add_interaction_force(
     const float G_int,
     __local float *local_fluid_1,
     __local float *local_fluid_2,
-    __global __read_only float *rho_global,
+    __global  float *rho_global,
     __global float *Gx_global,
     __global float *Gy_global,
     const float cs,
@@ -728,7 +728,7 @@ add_interaction_force_second_belt(
     const float G_int,
     __local float *local_fluid_1,
     __local float *local_fluid_2,
-    __global __read_only float *rho_global,
+    __global  float *rho_global,
     __global float *Gx_global,
     __global float *Gy_global,
     const float cs,
