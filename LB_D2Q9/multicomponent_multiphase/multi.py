@@ -20,7 +20,7 @@ parent_dir = os.path.dirname(file_dir)
 # Required for allocating local memory
 num_size = ct.sizeof(ct.c_double)
 
-num_type = np.double
+num_type = np.float32
 int_type = np.int32
 
 

@@ -1,23 +1,25 @@
+/*
 #ifdef cl_khr_fp64
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #elif defined(cl_amd_fp64)
     #pragma OPENCL EXTENSION cl_amd_fp64 : enable
 #else
-    #error "Double precision floating point not supported by OpenCL implementation."
+    #error "float precision floating point not supported by OpenCL implementation."
 #endif
+*/
 
 #define ZERO_DENSITY 1e-8
 
 __kernel void
 update_feq_fluid(
-    __global __write_only double *feq_global,
-    __global __read_only double *rho_global,
-    __global __read_only double *u_bary_global,
-    __global __read_only double *v_bary_global,
-    __constant double *w_arr,
+    __global __write_only float *feq_global,
+    __global __read_only float *rho_global,
+    __global __read_only float *u_bary_global,
+    __global __read_only float *v_bary_global,
+    __constant float *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
-    const double cs,
+    const float cs,
     const int nx, const int ny,
     const int field_num,
     const int num_populations,
@@ -33,22 +35,22 @@ update_feq_fluid(
 
         int three_d_index = field_num*nx*ny + two_d_index;
 
-        double rho = rho_global[three_d_index];
-        const double u = u_bary_global[two_d_index];
-        const double v = v_bary_global[two_d_index];
+        float rho = rho_global[three_d_index];
+        const float u = u_bary_global[two_d_index];
+        const float v = v_bary_global[two_d_index];
 
         // Now loop over every jumper
         for(int jump_id=0; jump_id < num_jumpers; jump_id++){
             int four_d_index = jump_id*num_populations*nx*ny + three_d_index;
 
-            double w = w_arr[jump_id];
+            float w = w_arr[jump_id];
             int cx = cx_arr[jump_id];
             int cy = cy_arr[jump_id];
 
-            double c_dot_u = cx*u + cy*v;
-            double u_squared = u*u + v*v;
+            float c_dot_u = cx*u + cy*v;
+            float u_squared = u*u + v*v;
 
-            double new_feq =
+            float new_feq =
             w*rho*(
             1.f
             + c_dot_u/(cs*cs)
@@ -63,22 +65,22 @@ update_feq_fluid(
 
 __kernel void
 collide_particles_fluid(
-    __global double *f_global,
-    __global __read_only double *feq_global,
-    __global __read_only double *rho_global,
-    __global __read_only double *u_bary_global,
-    __global __read_only double *v_bary_global,
-    __global __read_only double *Gx_global,
-    __global __read_only double *Gy_global,
-    const double omega,
-    __constant double *w_arr,
+    __global float *f_global,
+    __global __read_only float *feq_global,
+    __global __read_only float *rho_global,
+    __global __read_only float *u_bary_global,
+    __global __read_only float *v_bary_global,
+    __global __read_only float *Gx_global,
+    __global __read_only float *Gy_global,
+    const float omega,
+    __constant float *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
     const int nx, const int ny,
     const int cur_field,
     const int num_populations,
     const int num_jumpers,
-    const double cs)
+    const float cs)
 {
     //Input should be a 2d workgroup! Loop over the third dimension.
     const int x = get_global_id(0);
@@ -88,25 +90,25 @@ collide_particles_fluid(
         const int two_d_index = y*nx + x;
         int three_d_index = cur_field*ny*nx + two_d_index;
 
-        const double rho = rho_global[three_d_index];
-        const double u = u_bary_global[two_d_index];
-        const double v = v_bary_global[two_d_index];
-        const double Gx = Gx_global[three_d_index];
-        const double Gy = Gy_global[three_d_index];
+        const float rho = rho_global[three_d_index];
+        const float u = u_bary_global[two_d_index];
+        const float v = v_bary_global[two_d_index];
+        const float Gx = Gx_global[three_d_index];
+        const float Gy = Gy_global[three_d_index];
 
 
         for(int jump_id=0; jump_id < num_jumpers; jump_id++){
             int four_d_index = jump_id*num_populations*ny*nx + three_d_index;
 
-            double relax = f_global[four_d_index]*(1-omega) + omega*feq_global[four_d_index];
+            float relax = f_global[four_d_index]*(1-omega) + omega*feq_global[four_d_index];
             //Calculate Fi
-            double c_dot_F = cx_arr[jump_id] * Gx + cy_arr[jump_id] * Gy;
-            double c_dot_u = cx_arr[jump_id] * u  + cy_arr[jump_id] * v;
-            double u_dot_F = Gx * u + Gy * v;
+            float c_dot_F = cx_arr[jump_id] * Gx + cy_arr[jump_id] * Gy;
+            float c_dot_u = cx_arr[jump_id] * u  + cy_arr[jump_id] * v;
+            float u_dot_F = Gx * u + Gy * v;
 
-            double w = w_arr[jump_id];
+            float w = w_arr[jump_id];
 
-            double Fi = (1 - .5*omega)*w*(
+            float Fi = (1 - .5*omega)*w*(
                 c_dot_F/(cs*cs)
                 + c_dot_F*c_dot_u/pow(cs,4)
                 - u_dot_F/(cs*cs)
@@ -121,16 +123,16 @@ __kernel void
 add_eating_collision(
     const int eater_index,
     const int eatee_index,
-    const double eat_rate,
-    __global double *f_global,
-    __global __read_only double *rho_global,
-    __constant double *w_arr,
+    const float eat_rate,
+    __global float *f_global,
+    __global __read_only float *rho_global,
+    __constant float *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
     const int nx, const int ny,
     const int num_populations,
     const int num_jumpers,
-    const double cs)
+    const float cs)
 {
     //Input should be a 2d workgroup! Loop over the third dimension.
     const int x = get_global_id(0);
@@ -141,10 +143,10 @@ add_eating_collision(
         int three_d_eater_index = eater_index*ny*nx + two_d_index;
         int three_d_eatee_index = eatee_index*ny*nx + two_d_index;
 
-        const double rho_eater = rho_global[three_d_eater_index];
-        const double rho_eatee = rho_global[three_d_eatee_index];
+        const float rho_eater = rho_global[three_d_eater_index];
+        const float rho_eatee = rho_global[three_d_eatee_index];
 
-        const double all_growth = eat_rate*rho_eater*rho_eatee;
+        const float all_growth = eat_rate*rho_eater*rho_eatee;
 
         for(int jump_id=0; jump_id < num_jumpers; jump_id++){
             int four_d_eater_index = jump_id*num_populations*ny*nx + three_d_eater_index;
@@ -160,14 +162,14 @@ add_eating_collision(
 
 __kernel void
 update_bary_velocity(
-    __global double *u_bary_global,
-    __global double *v_bary_global,
-    __global __read_only double *rho_global,
-    __global __read_only double *f_global,
-    __global __read_only double *Gx_global,
-    __global __read_only double *Gy_global,
-    __constant double *tau_arr,
-    __constant double *w_arr,
+    __global float *u_bary_global,
+    __global float *v_bary_global,
+    __global __read_only float *rho_global,
+    __global __read_only float *f_global,
+    __global __read_only float *Gx_global,
+    __global __read_only float *Gy_global,
+    __constant float *tau_arr,
+    __constant float *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
     const int nx, const int ny,
@@ -181,22 +183,22 @@ update_bary_velocity(
     if ((x < nx) && (y < ny)){
         const int two_d_index = y*nx + x;
 
-        double sum_x = 0;
-        double sum_y = 0;
-        double rho_sum = 0;
+        float sum_x = 0;
+        float sum_y = 0;
+        float rho_sum = 0;
 
         for(int cur_field=0; cur_field < num_populations; cur_field++){
             int three_d_index = cur_field*ny*nx + two_d_index;
 
-            double cur_rho = rho_global[three_d_index];
+            float cur_rho = rho_global[three_d_index];
             rho_sum += cur_rho;
 
-            double Gx = Gx_global[three_d_index];
-            double Gy = Gy_global[three_d_index];
+            float Gx = Gx_global[three_d_index];
+            float Gy = Gy_global[three_d_index];
 
             for(int jump_id=0; jump_id < num_jumpers; jump_id++){
                 int four_d_index = jump_id*num_populations*ny*nx + three_d_index;
-                double f = f_global[four_d_index];
+                float f = f_global[four_d_index];
                 int cx = cx_arr[jump_id];
                 int cy = cy_arr[jump_id];
 
@@ -213,13 +215,13 @@ update_bary_velocity(
 
 __kernel void
 update_hydro_fluid(
-    __global __read_only double *f_global,
-    __global double *rho_global,
-    __global double *u_global,
-    __global double *v_global,
-    __global __read_only double *Gx_global,
-    __global __read_only double *Gy_global,
-    __constant double *w_arr,
+    __global __read_only float *f_global,
+    __global float *rho_global,
+    __global float *u_global,
+    __global float *v_global,
+    __global __read_only float *Gx_global,
+    __global __read_only float *Gy_global,
+    __constant float *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
     const int nx, const int ny,
@@ -237,13 +239,13 @@ update_hydro_fluid(
         int three_d_index = cur_field*ny*nx + two_d_index;
 
         // Update rho!
-        double new_rho = 0;
-        double new_u = 0;
-        double new_v = 0;
+        float new_rho = 0;
+        float new_u = 0;
+        float new_v = 0;
 
         for(int jump_id=0; jump_id < num_jumpers; jump_id++){
             int four_d_index = jump_id*num_populations*ny*nx + three_d_index;
-            double f = f_global[four_d_index];
+            float f = f_global[four_d_index];
 
             new_rho += f;
 
@@ -267,8 +269,8 @@ update_hydro_fluid(
 }
 
 __kernel void
-move_periodic(__global __read_only double *f_global,
-              __global __write_only double *f_streamed_global,
+move_periodic(__global __read_only float *f_global,
+              __global __write_only float *f_streamed_global,
               __constant int *cx,
               __constant int *cy,
               const int nx, const int ny,
@@ -310,8 +312,8 @@ move_periodic(__global __read_only double *f_global,
 
 __kernel void
 move(
-    __global __read_only double *f_global,
-    __global __write_only double *f_streamed_global,
+    __global __read_only float *f_global,
+    __global __write_only float *f_streamed_global,
     __constant int *cx,
     __constant int *cy,
     const int nx, const int ny,
@@ -348,7 +350,7 @@ move(
 
 __kernel void
 move_open_bcs(
-    __global __read_only double *f_global,
+    __global __read_only float *f_global,
     const int nx, const int ny,
     const int cur_field,
     const int num_populations,
@@ -451,8 +453,8 @@ move_open_bcs(
 
 __kernel void
 copy_streamed_onto_f(
-    __global __write_only double *f_streamed_global,
-    __global __read_only double *f_global,
+    __global __write_only float *f_streamed_global,
+    __global __read_only float *f_global,
     __constant int *cx,
     __constant int *cy,
     const int nx, const int ny,
@@ -479,11 +481,11 @@ copy_streamed_onto_f(
 __kernel void
 add_constant_g_force(
     const int field_num,
-    const double g_x,
-    const double g_y,
-    __global double *Gx_global,
-    __global double *Gy_global,
-    __global double *rho_global,
+    const float g_x,
+    const float g_y,
+    __global float *Gx_global,
+    __global float *Gy_global,
+    __global float *rho_global,
     const int nx, const int ny
 )
 {
@@ -494,7 +496,7 @@ add_constant_g_force(
     if ((x < nx) && (y < ny)){
         int three_d_index = field_num*nx*ny + y*nx + x;
 
-        double rho = rho_global[three_d_index];
+        float rho = rho_global[three_d_index];
 
         // Rembmer, force PER density! In *dimensionless* units.
         Gx_global[three_d_index] += g_x*rho;
@@ -508,11 +510,11 @@ add_radial_g_force(
     const int field_num,
     const int center_x,
     const int center_y,
-    const double prefactor,
-    const double radial_scaling,
-    __global double *Gx_global,
-    __global double *Gy_global,
-    __global double *rho_global,
+    const float prefactor,
+    const float radial_scaling,
+    __global float *Gx_global,
+    __global float *Gy_global,
+    __global float *rho_global,
     const int nx, const int ny
 )
 {
@@ -523,21 +525,21 @@ add_radial_g_force(
     if ((x < nx) && (y < ny)){
         int three_d_index = field_num*nx*ny + y*nx + x;
 
-        double rho = rho_global[three_d_index];
+        float rho = rho_global[three_d_index];
         // Get the current radius and angle
 
-        const double dx = x - center_x;
-        const double dy = y - center_y;
+        const float dx = x - center_x;
+        const float dy = y - center_y;
 
-        const double radius_dim = sqrt(dx*dx + dy*dy);
-        const double theta = atan2(dy, dx);
+        const float radius_dim = sqrt(dx*dx + dy*dy);
+        const float theta = atan2(dy, dx);
 
         // Get the unit vector
-        const double rhat_x = cos(theta);
-        const double rhat_y = sin(theta);
+        const float rhat_x = cos(theta);
+        const float rhat_y = sin(theta);
 
         // Get the gravitational acceleration
-        double magnitude = prefactor*((double)pow(radius_dim, radial_scaling));
+        float magnitude = prefactor*((float)pow(radius_dim, radial_scaling));
         Gx_global[three_d_index] += rho*magnitude*rhat_x;
         Gy_global[three_d_index] += rho*magnitude*rhat_y;
     }
@@ -545,9 +547,9 @@ add_radial_g_force(
 
 void get_psi(
     const int PSI_SPECIFIER,
-    double rho_1, double rho_2,
-    double *psi_1, double *psi_2,
-    __constant double *parameters)
+    float rho_1, float rho_2,
+    float *psi_1, float *psi_2,
+    __constant float *parameters)
 {
     //TODO: DO WE NEED ZERO CHECKING?
     if(rho_1 < 0) rho_1 = 0;
@@ -558,22 +560,22 @@ void get_psi(
         *psi_2 = rho_2;
     }
     if(PSI_SPECIFIER == 1){ // shan-chen
-        double rho_0 = parameters[0];
+        float rho_0 = parameters[0];
         *psi_1 = rho_0*(1 - exp(-rho_1/rho_0));
         *psi_2 = rho_0*(1 - exp(-rho_2/rho_0));
     }
     if(PSI_SPECIFIER == 2){ // pow(rho_1, alpha) * pow(rho_2, alpha)
-        *psi_1 = (double)pow(rho_1, parameters[0]);
-        *psi_2 = (double)pow(rho_2, parameters[0]);
+        *psi_1 = (float)pow(rho_1, parameters[0]);
+        *psi_2 = (float)pow(rho_2, parameters[0]);
     }
     if(PSI_SPECIFIER==3){ //van-der-waals; G MUST BE SET TO ONE TO USE THIS
-        double a = parameters[0];
-        double b = parameters[1];
-        double T = parameters[2];
-        double cs = parameters[3];
+        float a = parameters[0];
+        float b = parameters[1];
+        float T = parameters[2];
+        float cs = parameters[3];
 
-        double P1 = (rho_1*T)/(1 - rho_1*b) - a*rho_1*rho_1;
-        double P2 = (rho_2*T)/(1 - rho_2*b) - a*rho_2*rho_2;
+        float P1 = (rho_1*T)/(1 - rho_1*b) - a*rho_1*rho_1;
+        float P2 = (rho_2*T)/(1 - rho_2*b) - a*rho_2*rho_2;
 
         *psi_1 = sqrt(2*(P1 - cs*cs*rho_1)/(cs*cs));
         *psi_2 = sqrt(2*(P2 - cs*cs*rho_2)/(cs*cs));
@@ -584,23 +586,23 @@ __kernel void
 add_interaction_force(
     const int fluid_index_1,
     const int fluid_index_2,
-    const double G_int,
-    __local double *local_fluid_1,
-    __local double *local_fluid_2,
-    __global __read_only double *rho_global,
-    __global double *Gx_global,
-    __global double *Gy_global,
-    const double cs,
+    const float G_int,
+    __local float *local_fluid_1,
+    __local float *local_fluid_2,
+    __global __read_only float *rho_global,
+    __global float *Gx_global,
+    __global float *Gy_global,
+    const float cs,
     __constant int *cx,
     __constant int *cy,
-    __constant double *w,
+    __constant float *w,
     const int nx, const int ny,
     const int buf_nx, const int buf_ny,
     const int halo,
     const int num_jumpers,
     const int BC_SPECIFIER,
     const int PSI_SPECIFIER,
-    __constant double *parameters)
+    __constant float *parameters)
 {
     const int x = get_global_id(0);
     const int y = get_global_id(1);
@@ -655,30 +657,30 @@ add_interaction_force(
     //Now that all desired rhos are read in, do the multiplication
     if ((x < nx) && (y < ny)){
 
-        double force_x_fluid_1 = 0;
-        double force_y_fluid_1 = 0;
+        float force_x_fluid_1 = 0;
+        float force_y_fluid_1 = 0;
 
-        double force_x_fluid_2 = 0;
-        double force_y_fluid_2 = 0;
+        float force_x_fluid_2 = 0;
+        float force_y_fluid_2 = 0;
 
         // Get the psi at the current pixel
         const int old_2d_buf_index = buf_y*buf_nx + buf_x;
 
-        double rho_1_pixel = local_fluid_1[old_2d_buf_index];
-        double rho_2_pixel = local_fluid_2[old_2d_buf_index];
+        float rho_1_pixel = local_fluid_1[old_2d_buf_index];
+        float rho_2_pixel = local_fluid_2[old_2d_buf_index];
 
-        double psi_1_pixel = 0;
-        double psi_2_pixel = 0;
+        float psi_1_pixel = 0;
+        float psi_2_pixel = 0;
 
         get_psi(PSI_SPECIFIER, rho_1_pixel, rho_2_pixel, &psi_1_pixel, &psi_2_pixel, parameters);
 
-        double psi_1 = 0; // The psi that correspond to jumping around the lattice
-        double psi_2 = 0;
+        float psi_1 = 0; // The psi that correspond to jumping around the lattice
+        float psi_2 = 0;
 
         for(int jump_id = 0; jump_id < num_jumpers; jump_id++){
             int cur_cx = cx[jump_id];
             int cur_cy = cy[jump_id];
-            double cur_w = w[jump_id];
+            float cur_w = w[jump_id];
 
             //Get the shifted positions
             int stream_buf_x = buf_x + cur_cx;
@@ -686,8 +688,8 @@ add_interaction_force(
 
             int new_2d_buf_index = stream_buf_y*buf_nx + stream_buf_x;
 
-            double cur_rho_1 = local_fluid_1[new_2d_buf_index];
-            double cur_rho_2 = local_fluid_2[new_2d_buf_index];
+            float cur_rho_1 = local_fluid_1[new_2d_buf_index];
+            float cur_rho_2 = local_fluid_2[new_2d_buf_index];
 
             get_psi(PSI_SPECIFIER, cur_rho_1, cur_rho_2, &psi_1, &psi_2, parameters);
 
@@ -723,18 +725,18 @@ __kernel void
 add_interaction_force_second_belt(
     const int fluid_index_1,
     const int fluid_index_2,
-    const double G_int,
-    __local double *local_fluid_1,
-    __local double *local_fluid_2,
-    __global __read_only double *rho_global,
-    __global double *Gx_global,
-    __global double *Gy_global,
-    const double cs,
-    __constant double *pi1,
+    const float G_int,
+    __local float *local_fluid_1,
+    __local float *local_fluid_2,
+    __global __read_only float *rho_global,
+    __global float *Gx_global,
+    __global float *Gy_global,
+    const float cs,
+    __constant float *pi1,
     __constant int *cx1,
     __constant int *cy1,
     const int num_jumpers_1,
-    __constant double *pi2,
+    __constant float *pi2,
     __constant int *cx2,
     __constant int *cy2,
     const int num_jumpers_2,
@@ -743,7 +745,7 @@ add_interaction_force_second_belt(
     const int halo,
     const int BC_SPECIFIER,
     const int PSI_SPECIFIER,
-    __constant double *parameters)
+    __constant float *parameters)
 {
     const int x = get_global_id(0);
     const int y = get_global_id(1);
@@ -799,32 +801,32 @@ add_interaction_force_second_belt(
     if ((x < nx) && (y < ny)){
 
         //Remember, this is force PER DENSITY to avoid problems
-        double force_x_fluid_1 = 0;
-        double force_y_fluid_1 = 0;
+        float force_x_fluid_1 = 0;
+        float force_y_fluid_1 = 0;
 
-        double force_x_fluid_2 = 0;
-        double force_y_fluid_2 = 0;
+        float force_x_fluid_2 = 0;
+        float force_y_fluid_2 = 0;
 
         // Get the psi at the current pixel
         const int old_2d_buf_index = buf_y*buf_nx + buf_x;
 
-        double rho_1_pixel = local_fluid_1[old_2d_buf_index];
-        double rho_2_pixel = local_fluid_2[old_2d_buf_index];
+        float rho_1_pixel = local_fluid_1[old_2d_buf_index];
+        float rho_2_pixel = local_fluid_2[old_2d_buf_index];
 
-        double psi_1_pixel = 0;
-        double psi_2_pixel = 0;
+        float psi_1_pixel = 0;
+        float psi_2_pixel = 0;
 
         get_psi(PSI_SPECIFIER, rho_1_pixel, rho_2_pixel, &psi_1_pixel, &psi_2_pixel, parameters);
 
         //Psi at other pixels
 
-        double psi_1 = 0;
-        double psi_2 = 0;
+        float psi_1 = 0;
+        float psi_2 = 0;
 
         for(int jump_id = 0; jump_id < num_jumpers_1; jump_id++){
             int cur_cx = cx1[jump_id];
             int cur_cy = cy1[jump_id];
-            double cur_w = pi1[jump_id];
+            float cur_w = pi1[jump_id];
 
             //Get the shifted positions
             int stream_buf_x = buf_x + cur_cx;
@@ -832,8 +834,8 @@ add_interaction_force_second_belt(
 
             int new_2d_buf_index = stream_buf_y*buf_nx + stream_buf_x;
 
-            double cur_rho_1 = local_fluid_1[new_2d_buf_index];
-            double cur_rho_2 = local_fluid_2[new_2d_buf_index];
+            float cur_rho_1 = local_fluid_1[new_2d_buf_index];
+            float cur_rho_2 = local_fluid_2[new_2d_buf_index];
 
             get_psi(PSI_SPECIFIER, cur_rho_1, cur_rho_2, &psi_1, &psi_2, parameters);
 
@@ -847,7 +849,7 @@ add_interaction_force_second_belt(
         for(int jump_id = 0; jump_id < num_jumpers_2; jump_id++){
             int cur_cx = cx2[jump_id];
             int cur_cy = cy2[jump_id];
-            double cur_w = pi2[jump_id];
+            float cur_w = pi2[jump_id];
 
             //Get the shifted positions
             int stream_buf_x = buf_x + cur_cx;
@@ -855,8 +857,8 @@ add_interaction_force_second_belt(
 
             int new_2d_buf_index = stream_buf_y*buf_nx + stream_buf_x;
 
-            double cur_rho_1 = local_fluid_1[new_2d_buf_index];
-            double cur_rho_2 = local_fluid_2[new_2d_buf_index];
+            float cur_rho_1 = local_fluid_1[new_2d_buf_index];
+            float cur_rho_2 = local_fluid_2[new_2d_buf_index];
 
             get_psi(PSI_SPECIFIER, cur_rho_1, cur_rho_2, &psi_1, &psi_2, parameters);
 
