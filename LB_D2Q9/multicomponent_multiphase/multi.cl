@@ -10,10 +10,10 @@
 
 __kernel void
 update_feq_fluid(
-    __global __write_only double *feq_global,
-    __global __read_only double *rho_global,
-    __global __read_only double *u_bary_global,
-    __global __read_only double *v_bary_global,
+    __global  double *feq_global,
+    __global  double *rho_global,
+    __global  double *u_bary_global,
+    __global  double *v_bary_global,
     __constant double *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
@@ -64,12 +64,12 @@ update_feq_fluid(
 __kernel void
 collide_particles_fluid(
     __global double *f_global,
-    __global __read_only double *feq_global,
-    __global __read_only double *rho_global,
-    __global __read_only double *u_bary_global,
-    __global __read_only double *v_bary_global,
-    __global __read_only double *Gx_global,
-    __global __read_only double *Gy_global,
+    __global  double *feq_global,
+    __global  double *rho_global,
+    __global  double *u_bary_global,
+    __global  double *v_bary_global,
+    __global  double *Gx_global,
+    __global  double *Gy_global,
     const double omega,
     __constant double *w_arr,
     __constant int *cx_arr,
@@ -123,7 +123,7 @@ add_eating_collision(
     const int eatee_index,
     const double eat_rate,
     __global double *f_global,
-    __global __read_only double *rho_global,
+    __global  double *rho_global,
     __constant double *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
@@ -162,10 +162,10 @@ __kernel void
 update_bary_velocity(
     __global double *u_bary_global,
     __global double *v_bary_global,
-    __global __read_only double *rho_global,
-    __global __read_only double *f_global,
-    __global __read_only double *Gx_global,
-    __global __read_only double *Gy_global,
+    __global  double *rho_global,
+    __global  double *f_global,
+    __global  double *Gx_global,
+    __global  double *Gy_global,
     __constant double *tau_arr,
     __constant double *w_arr,
     __constant int *cx_arr,
@@ -213,12 +213,12 @@ update_bary_velocity(
 
 __kernel void
 update_hydro_fluid(
-    __global __read_only double *f_global,
+    __global  double *f_global,
     __global double *rho_global,
     __global double *u_global,
     __global double *v_global,
-    __global __read_only double *Gx_global,
-    __global __read_only double *Gy_global,
+    __global  double *Gx_global,
+    __global  double *Gy_global,
     __constant double *w_arr,
     __constant int *cx_arr,
     __constant int *cy_arr,
@@ -267,8 +267,8 @@ update_hydro_fluid(
 }
 
 __kernel void
-move_periodic(__global __read_only double *f_global,
-              __global __write_only double *f_streamed_global,
+move_periodic(__global  double *f_global,
+              __global  double *f_streamed_global,
               __constant int *cx,
               __constant int *cy,
               const int nx, const int ny,
@@ -310,8 +310,8 @@ move_periodic(__global __read_only double *f_global,
 
 __kernel void
 move(
-    __global __read_only double *f_global,
-    __global __write_only double *f_streamed_global,
+    __global  double *f_global,
+    __global  double *f_streamed_global,
     __constant int *cx,
     __constant int *cy,
     const int nx, const int ny,
@@ -348,7 +348,7 @@ move(
 
 __kernel void
 move_open_bcs(
-    __global __read_only double *f_global,
+    __global  double *f_global,
     const int nx, const int ny,
     const int cur_field,
     const int num_populations,
@@ -451,8 +451,8 @@ move_open_bcs(
 
 __kernel void
 copy_streamed_onto_f(
-    __global __write_only double *f_streamed_global,
-    __global __read_only double *f_global,
+    __global  double *f_streamed_global,
+    __global  double *f_global,
     __constant int *cx,
     __constant int *cy,
     const int nx, const int ny,
@@ -587,7 +587,7 @@ add_interaction_force(
     const double G_int,
     __local double *local_fluid_1,
     __local double *local_fluid_2,
-    __global __read_only double *rho_global,
+    __global  double *rho_global,
     __global double *Gx_global,
     __global double *Gy_global,
     const double cs,
@@ -726,7 +726,7 @@ add_interaction_force_second_belt(
     const double G_int,
     __local double *local_fluid_1,
     __local double *local_fluid_2,
-    __global __read_only double *rho_global,
+    __global  double *rho_global,
     __global double *Gx_global,
     __global double *Gy_global,
     const double cs,
