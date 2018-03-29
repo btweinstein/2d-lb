@@ -562,6 +562,36 @@ add_constant_g_force(
 }
 
 __kernel void
+add_buoyancy_force(
+    const int flow_field_num,
+    const int solute_field_num,
+    const double g_x,
+    const double g_y,
+    __global double *Gx_global,
+    __global double *Gy_global,
+    __global double *rho_global,
+    const int nx, const int ny
+)
+{
+    //Input should be a 2d workgroup! Loop over the third dimension.
+    const int x = get_global_id(0);
+    const int y = get_global_id(1);
+
+    if ((x < nx) && (y < ny)){
+        int flow_three_d_index = flow_field_num*nx*ny + y*nx + x;
+        int solute_three_d_index = solute_field_num*nx*ny + y*nx + x;
+
+        double rho_flow = rho_global[flow_three_d_index];
+        double rho_solute = rho_global[solute_three_d_index];
+        double rho_tot = rho_flow + rho_solute;
+
+        //TODO: Check to make sure that this buoyancy force is physical...should it also be impacting the diffusing field? Hmmm...
+        Gx_global[flow_three_d_index] += g_x*rho_tot;
+        Gy_global[flow_three_d_index] += g_y*rho_tot;
+    }
+}
+
+__kernel void
 add_radial_g_force(
     const int field_num,
     const int center_x,
