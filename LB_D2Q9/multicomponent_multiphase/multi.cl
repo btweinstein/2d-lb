@@ -135,7 +135,7 @@ add_eating_collision(
     const int eater_index,
     const int eatee_index,
     const double eat_rate,
-    const double orderparameter_cutoff,
+    const double eater_cutoff,
     __global double *f_global,
     __global __read_only double *rho_global,
     __constant double *w_arr,
@@ -158,13 +158,9 @@ add_eating_collision(
         const double rho_eater = rho_global[three_d_eater_index];
         const double rho_eatee = rho_global[three_d_eatee_index];
 
-        // Only eat if you are at an interface...
-        double phi = (rho_eater - rho_eatee)/(rho_eater + rho_eatee);
-        double abs_phi = (double)fabs(phi);
-
         double all_growth = 0;
-        if (abs_phi < orderparameter_cutoff){ // Only grow at the interface
-            all_growth = eat_rate*rho_eater*rho_eatee;
+        if (rho_eater > eater_cutoff){
+            all_growth = eat_rate*rho_eater*rho_eatee; // Eat a diffusing solute
         }
 
         for(int jump_id=0; jump_id < num_jumpers; jump_id++){
