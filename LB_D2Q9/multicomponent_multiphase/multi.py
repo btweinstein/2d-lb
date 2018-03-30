@@ -276,6 +276,12 @@ class Simulation_Runner(object):
 
         self.allocate_constants()
 
+        ## Initialize the node map...user is responsible for passing this in correctly.
+        # Should be a list...(appropriate_nx, appropriate_ny
+        rho_host = np.zeros((self.nx, self.ny, self.num_populations), dtype=num_type, order='F')
+        self.rho = cl.array.to_device(self.queue, rho_host)
+
+
         ## Initialize hydrodynamic variables & Shan-chen variables
 
         rho_host = np.zeros((self.nx, self.ny, self.num_populations), dtype=num_type, order='F')
@@ -283,8 +289,8 @@ class Simulation_Runner(object):
 
         u_host = np.zeros((self.nx, self.ny, self.num_populations), dtype=num_type, order='F')
         v_host = np.zeros((self.nx, self.ny, self.num_populations), dtype=num_type, order='F')
-        self.u = cl.array.to_device(self.queue, u_host) # Velocity in the x direction; one per sim!
-        self.v = cl.array.to_device(self.queue, v_host) # Velocity in the y direction; one per sim.
+        self.u = cl.array.to_device(self.queue, u_host) # Velocity in the x direction; one per fluid!
+        self.v = cl.array.to_device(self.queue, v_host) # Velocity in the y direction; one per fluid.
 
         u_bary_host = np.zeros((self.nx, self.ny), dtype=num_type, order='F')
         v_bary_host = np.zeros((self.nx, self.ny), dtype=num_type, order='F')
