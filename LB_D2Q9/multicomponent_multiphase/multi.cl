@@ -468,8 +468,8 @@ move_with_bcs(
 
                     const int reflect_index = reflect_list[jump_id];
 
-                    int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny;
-                    int new_4d_index = reflect_index*num_populations*nx*ny + cur_field*nx*ny;
+                    int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
+                    int new_4d_index = reflect_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
 
                     f_streamed_global[new_4d_index] = f_global[old_4d_index];
                 }
@@ -479,8 +479,8 @@ move_with_bcs(
                     if ((stream_x >= nx)||(stream_x < 0)) slip_index = slip_x_list[jump_id];
                     else if ((stream_y >= ny)||(stream_y < 0)) slip_index = slip_y_list[jump_id];
 
-                    int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny;
-                    int new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny;
+                    int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
+                    int new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
 
                     f_streamed_global[new_4d_index] = f_global[old_4d_index];
                 }
