@@ -407,6 +407,9 @@ move_with_bcs(
     __global __read_only double *f_global,
     __global __write_only double *f_streamed_global,
     __global __read_only int *bc_map,
+    __constant int *reflect_list,
+    __constant int *slip_x_list,
+    __constant int *slip_y_list,
     __constant int *cx,
     __constant int *cy,
     const int nx, const int ny,
@@ -436,9 +439,48 @@ move_with_bcs(
                 f_streamed_global[new_4d_index] = f_global[old_4d_index];
             }
             else{ // Apply the correct BC
-                const int new_3d_index = cur_field*nx*ny + stream_y*nx + stream_x; // Position in normal LB space
                 // Convert position in normal LB space to bc_map space
-                const int bc_num = bc_map
+
+                const int x_bc = bc_halo + stream_x;
+                const int y_bc = bc_halo + stream_y;
+
+                const int bc_3d_index = cur_field*nx_bc*ny_bc + y_bc*nx_bc + x_bc; // Position in normal LB space
+
+                const int bc_num = bc_map[bc_3d_index];
+
+                if(bc_num == 1){ // Periodic BC
+                    if (stream_x >= nx) stream_x -= nx;
+                    if (stream_x < 0) stream_x += nx ;
+
+                    if (stream_y >= ny) stream_y -= ny;
+                    if (stream_y < 0) stream_y += ny;
+
+                    int slice = jump_id*num_populations*nx*ny + cur_field*nx*ny;
+                    int old_4d_index = slice + y*nx + x;
+                    int new_4d_index = slice + stream_y*nx + stream_x;
+
+                    f_streamed_global[new_4d_index] = f_global[old_4d_index];
+                }
+                else if(bc_num == 2){ // No-slip BC
+
+                    const int reflect_index = reflect_list[jump_id];
+
+                    int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny;
+                    int new_4d_index = reflect_index*num_populations*nx*ny + cur_field*nx*ny;
+
+                    f_streamed_global[new_4d_index] = f_global[old_4d_index];
+                }
+                else if(bc_num == 3){ // Slip BC
+
+                    const int slip_index = -999999;
+                    if ((stream_x >= nx)||(stream_x < 0)) slip_index = slip_x_list[jump_id];
+                    else if ((stream_y >= ny)||(stream_y < 0)) slip_index = slip_y_list[jump_id];
+
+                    int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny;
+                    int new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny;
+
+                    f_streamed_global[new_4d_index] = f_global[old_4d_index];
+                }
             }
         }
     }
