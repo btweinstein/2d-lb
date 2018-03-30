@@ -432,62 +432,49 @@ move_with_bcs(
             int stream_x = x + cur_cx;
             int stream_y = y + cur_cy;
 
-            // Check if you are in bounds
+            // Figure out what type of node the steamed position is
 
-            if ((stream_x >= 0)&&(stream_x < nx)&&(stream_y>=0)&&(stream_y<ny)){
-                int slice = jump_id*num_populations*nx*ny + cur_field*nx*ny;
-                int old_4d_index = slice + y*nx + x;
-                int new_4d_index = slice + stream_y*nx + stream_x;
+            const int x_bc = bc_halo + stream_x;
+            const int y_bc = bc_halo + stream_y;
 
-                f_streamed_global[new_4d_index] = f_global[old_4d_index];
+            const int bc_3d_index = cur_field*nx_bc*ny_bc + y_bc*nx_bc + x_bc; // Position in normal LB space
+
+            const int bc_num = bc_map[bc_3d_index];
+
+            int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + y*nx + x; // The old population index
+            int new_4d_index; // Initialize to a nonsense value...will correspond to the bounceback population
+
+            if(bc_num == 0){ // In the domain
+                new_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + stream_y*nx + stream_x;
             }
-            else{ // Apply the correct BC
-                // Convert position in normal LB space to bc_map space
+            else if(bc_num == 1){ // Periodic BC
+                if (stream_x >= nx) stream_x -= nx;
+                if (stream_x < 0) stream_x += nx ;
 
-                const int x_bc = bc_halo + stream_x;
-                const int y_bc = bc_halo + stream_y;
+                if (stream_y >= ny) stream_y -= ny;
+                if (stream_y < 0) stream_y += ny;
 
-                const int bc_3d_index = cur_field*nx_bc*ny_bc + y_bc*nx_bc + x_bc; // Position in normal LB space
-
-                const int bc_num = bc_map[bc_3d_index];
-
-                if(bc_num == 1){ // Periodic BC
-                    if (stream_x >= nx) stream_x -= nx;
-                    if (stream_x < 0) stream_x += nx ;
-
-                    if (stream_y >= ny) stream_y -= ny;
-                    if (stream_y < 0) stream_y += ny;
-
-                    int slice = jump_id*num_populations*nx*ny + cur_field*nx*ny;
-                    int old_4d_index = slice + y*nx + x;
-                    int new_4d_index = slice + stream_y*nx + stream_x;
-
-                    f_streamed_global[new_4d_index] = f_global[old_4d_index];
-                }
-                else if(bc_num == 2){ // No-slip BC
-                    const int reflect_index = reflect_list[jump_id];
-
-                    int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
-                    int new_4d_index = reflect_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
-
-                    f_streamed_global[new_4d_index] = f_global[old_4d_index];
-                }
-                else if(bc_num == 3){ // Slip BC...if both or out you're at a corner, and bounce back.
-                    //TODO: THE SLIP BC APPEARS TO LEAK MASS SOMEHOW. NOT SURE WHY.
-                    int x_is_out = ((stream_x >= nx)||(stream_x < 0));
-                    int y_is_out = ((stream_y >= ny)||(stream_y < 0));
-
-                    int slip_index = -1;
-                    if (x_is_out && !y_is_out) slip_index = slip_x_list[jump_id];
-                    else if (!x_is_out && y_is_out) slip_index = slip_y_list[jump_id];
-                    else slip_index = reflect_list[jump_id];
-
-                    int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
-                    int new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
-
-                    f_streamed_global[new_4d_index] = f_global[old_4d_index];
-                }
+                new_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + stream_y*nx + stream_x;
             }
+            else if(bc_num == 2){ // No-slip BC
+                const int reflect_index = reflect_list[jump_id];
+
+                new_4d_index = reflect_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
+            }
+            else if(bc_num == 3){ // Slip BC...if both or out you're at a corner, and bounce back.
+                //TODO: THE SLIP BC APPEARS TO LEAK MASS SOMEHOW. NOT SURE WHY.
+                int x_is_out = ((stream_x >= nx)||(stream_x < 0));
+                int y_is_out = ((stream_y >= ny)||(stream_y < 0));
+
+                int slip_index = -1;
+                if (x_is_out && !y_is_out) slip_index = slip_x_list[jump_id];
+                else if (!x_is_out && y_is_out) slip_index = slip_y_list[jump_id];
+                else slip_index = reflect_list[jump_id]; // Reflect
+
+                new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
+            }
+
+            f_streamed_global[new_4d_index] = f_global[old_4d_index];
         }
     }
 }

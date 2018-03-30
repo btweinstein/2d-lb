@@ -25,6 +25,7 @@ num_type = np.double
 int_type = np.int32
 
 # Constants for defining the node map...
+OUTSIDE_DOMAIN = int_type(-1)
 REGULAR = int_type(0)
 PERIODIC_BC = int_type(1)
 NOSLIP_BC = int_type(2)
