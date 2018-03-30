@@ -672,8 +672,8 @@ add_buoyancy_force(
         double rho_tot = rho_flow + rho_solute;
 
         //TODO: Check to make sure that this buoyancy force is physical...should it also be impacting the diffusing field? Hmmm...
-        Gx_global[flow_three_d_index] += g_x*rho_tot;
-        Gy_global[flow_three_d_index] += g_y*rho_tot;
+        Gx_global[flow_three_d_index] += g_x*rho_solute;
+        Gy_global[flow_three_d_index] += g_y*rho_solute;
     }
 }
 
