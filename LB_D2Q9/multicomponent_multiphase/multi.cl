@@ -473,11 +473,14 @@ move_with_bcs(
 
                     f_streamed_global[new_4d_index] = f_global[old_4d_index];
                 }
-                else if(bc_num == 3){ // Slip BC
+                else if(bc_num == 3){ // Slip BC...if both or out you're at a corner, and bounce back.
+                    int x_is_out = ((stream_x >= nx)||(stream_x < 0));
+                    int y_is_out = ((stream_y >= ny)||(stream_y < 0));
 
-                    int slip_index = -999999;
-                    if ((stream_x >= nx)||(stream_x < 0)) slip_index = slip_x_list[jump_id];
-                    else if ((stream_y >= ny)||(stream_y < 0)) slip_index = slip_y_list[jump_id];
+                    int slip_index = -1;
+                    if (x_is_out & !y_is_out) slip_index = slip_x_list[jump_id];
+                    else if (!x_is_out & y_is_out) slip_index = slip_y_list[jump_id];
+                    else slip_index = reflect_list[jump_id];
 
                     int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
                     int new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
