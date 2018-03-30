@@ -25,10 +25,10 @@ num_type = np.double
 int_type = np.int32
 
 # Constants for defining the node map...
-REGULAR = 0
-PERIODIC_BC = 1
-NOSLIP_BC = 2
-SLIP_BC = 3
+REGULAR = int_type(0)
+PERIODIC_BC = int_type(1)
+NOSLIP_BC = int_type(2)
+SLIP_BC = int_type(3)
 
 def get_divisible_global(global_size, local_size):
     """
@@ -257,7 +257,7 @@ class Simulation_Runner(object):
         self.nx_bc = int_type(bc_map.shape[0])
         self.ny_bc = int_type(bc_map.shape[1])
         self.halo_bc = int_type((self.nx_bc - nx)/2)
-        bc_map = np.array(bc_map, dtype=num_type, order='F')
+        bc_map = np.array(bc_map, dtype=int_type, order='F')
         self.bc_map = cl.array.to_device(self.queue, bc_map)
 
 
