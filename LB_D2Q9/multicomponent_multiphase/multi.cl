@@ -402,6 +402,48 @@ move(
     }
 }
 
+__kernel void
+move_with_bcs(
+    __global __read_only double *f_global,
+    __global __write_only double *f_streamed_global,
+    __global __read_only int *bc_map,
+    __constant int *cx,
+    __constant int *cy,
+    const int nx, const int ny,
+    const int cur_field,
+    const int num_populations,
+    const int num_jumpers)
+{
+    //Input should be a 2d workgroup!
+    const int x = get_global_id(0);
+    const int y = get_global_id(1);
+
+    if ((x < nx) && (y < ny)){
+        for(int jump_id = 0; jump_id < num_jumpers; jump_id++){
+            int cur_cx = cx[jump_id];
+            int cur_cy = cy[jump_id];
+
+            int stream_x = x + cur_cx;
+            int stream_y = y + cur_cy;
+
+            // Check if you are in bounds
+
+            if ((stream_x >= 0)&&(stream_x < nx)&&(stream_y>=0)&&(stream_y<ny)){
+                int slice = jump_id*num_populations*nx*ny + cur_field*nx*ny;
+                int old_4d_index = slice + y*nx + x;
+                int new_4d_index = slice + stream_y*nx + stream_x;
+
+                f_streamed_global[new_4d_index] = f_global[old_4d_index];
+            }
+            else{ // Apply the correct BC
+                const int new_3d_index = cur_field*nx*ny + stream_y*nx + stream_x; // Position in normal LB space
+                // Convert position in normal LB space to bc_map space
+                const int bc_num = bc_map
+            }
+        }
+    }
+}
+
 
 
 __kernel void

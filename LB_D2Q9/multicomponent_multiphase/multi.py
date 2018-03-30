@@ -24,6 +24,11 @@ num_size = ct.sizeof(ct.c_double)
 num_type = np.double
 int_type = np.int32
 
+# Constants for defining the node map...
+REGULAR = 0
+PERIODIC_BC = 1
+NOSLIP_BC = 2
+SLIP_BC = 3
 
 def get_divisible_global(global_size, local_size):
     """
@@ -228,7 +233,7 @@ class Simulation_Runner(object):
     Everything is in dimensionless units. It's just easier.
     """
 
-    def __init__(self, nx=100, ny=100,
+    def __init__(self, nx=100, ny=100, bc_map=None,
                  L_lb=100, T_lb=1.,
                  num_populations=1,
                  two_d_local_size=(32,32), use_interop=False,
@@ -277,9 +282,10 @@ class Simulation_Runner(object):
         self.allocate_constants()
 
         ## Initialize the node map...user is responsible for passing this in correctly.
-        # Should be a list...(appropriate_nx, appropriate_ny
-        rho_host = np.zeros((self.nx, self.ny, self.num_populations), dtype=num_type, order='F')
-        self.rho = cl.array.to_device(self.queue, rho_host)
+        # The node map can have a DIFFERENT nx and ny...so we will have to translate between the two
+        self.bc_nx = bc_map.shape[0]
+        self.bc_ny = bc_map.shape[1]
+        self.bc_map = cl.array.to_device(self.queue, bc_map)
 
 
         ## Initialize hydrodynamic variables & Shan-chen variables
