@@ -131,26 +131,6 @@ class Fluid(object):
             self.field_index, sim.num_populations,
             sim.num_jumpers).wait()
 
-    def move_bcs(self):
-        """
-        Enforce boundary conditions and move the jumpers on the boundaries. Generally extremely painful.
-        Implemented in OpenCL.
-        """
-
-        sim = self.sim
-
-        if self.bc is 'periodic':
-            pass # Implemented in move_periodic in this case...it's just easier
-        elif self.bc is 'zero_gradient':
-            self.sim.kernels.move_open_bcs(
-                sim.queue, sim.two_d_global_size, sim.two_d_local_size,
-                sim.f.data,
-                sim.nx, sim.ny,
-                self.field_index, sim.num_populations,
-                sim.num_jumpers).wait()
-        else:
-            raise ValueError('unknown bc...')
-
 
     def move(self):
         """
@@ -161,24 +141,15 @@ class Fluid(object):
 
         sim = self.sim
 
-        if self.bc is 'periodic':
-            self.sim.kernels.move_periodic(
-                sim.queue, sim.two_d_global_size, sim.two_d_local_size,
-                sim.f.data, sim.f_streamed.data,
-                sim.cx, sim.cy,
-                sim.nx, sim.ny,
-                self.field_index, sim.num_populations, sim.num_jumpers
-            ).wait()
-        elif self.bc is 'zero_gradient':
-            self.sim.kernels.move(
-                sim.queue, sim.two_d_global_size, sim.two_d_local_size,
-                sim.f.data, sim.f_streamed.data,
-                sim.cx, sim.cy,
-                sim.nx, sim.ny,
-                self.field_index, sim.num_populations, sim.num_jumpers
-            ).wait()
-        else:
-            raise ValueError('unknown bc...')
+        self.sim.kernels.move_with_bcs(
+            sim.queue, sim.two_d_global_size, sim.two_d_local_size,
+            sim.f.data, sim.f_streamed.data,
+            sim.cx, sim.cy,
+            sim.nx, sim.ny,
+            self.field_index, sim.num_populations, sim.num_jumpers,
+            sim.bc_map.data, sim.nx_bc, sim.ny_bc, sim.halo_bc,
+            sim.reflect_index, sim.slip_x_index, sim.slip_y_index
+        ).wait()
 
         # Copy the streamed buffer into f so that it is correctly updated.
         self.sim.kernels.copy_streamed_onto_f(
@@ -283,9 +254,9 @@ class Simulation_Runner(object):
 
         ## Initialize the node map...user is responsible for passing this in correctly.
         # The node map can have a DIFFERENT nx and ny...so we will have to translate between the two
-        self.bc_nx = int_type(bc_map.shape[0])
-        self.bc_ny = int_type(bc_map.shape[1])
-        self.bc_halo = (self.bc_nx - nx)/2
+        self.nx_bc = int_type(bc_map.shape[0])
+        self.ny_bc = int_type(bc_map.shape[1])
+        self.halo_bc = int_type((self.nx_bc - nx)/2)
         bc_map = np.array(bc_map, dtype=num_type, order='F')
         self.bc_map = cl.array.to_device(self.queue, bc_map)
 
@@ -815,12 +786,6 @@ class Simulation_Runner(object):
                 cur_fluid.move() # Move all jumpers
             if debug:
                 print 'After move'
-                self.check_fields()
-
-            for cur_fluid in self.fluid_list:
-                cur_fluid.move_bcs() # Must move before applying BC
-            if debug:
-                print 'After move bcs'
                 self.check_fields()
 
             # Update forces here as appropriate
