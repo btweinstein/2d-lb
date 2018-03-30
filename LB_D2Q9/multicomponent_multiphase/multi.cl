@@ -467,11 +467,20 @@ move_with_bcs(
                 int y_is_out = ((stream_y >= ny)||(stream_y < 0));
 
                 int slip_index = -1;
-                if (x_is_out && !y_is_out) slip_index = slip_x_list[jump_id];
-                else if (!x_is_out && y_is_out) slip_index = slip_y_list[jump_id];
-                else slip_index = reflect_list[jump_id]; // Reflect
-
-                new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
+                if (x_is_out && !y_is_out){
+                    slip_index = slip_x_list[jump_id];
+                    // Keep y momentum...i.e. stream y, but keep x the same (reflected)
+                    new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny + stream_y*nx + x;
+                }
+                else if (!x_is_out && y_is_out){
+                    slip_index = slip_y_list[jump_id];
+                    // Keep x momentum...i.e. stream x, but keep y the same (reflected)
+                    new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + stream_x;
+                }
+                else{ // Reflect.
+                    slip_index = reflect_list[jump_id];
+                    new_4d_index = slip_index*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
+                }
             }
 
             f_streamed_global[new_4d_index] = f_global[old_4d_index];
