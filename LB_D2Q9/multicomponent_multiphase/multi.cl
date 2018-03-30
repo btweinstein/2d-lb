@@ -478,8 +478,8 @@ move_with_bcs(
                     int y_is_out = ((stream_y >= ny)||(stream_y < 0));
 
                     int slip_index = -1;
-                    if (x_is_out & !y_is_out) slip_index = slip_x_list[jump_id];
-                    else if (!x_is_out & y_is_out) slip_index = slip_y_list[jump_id];
+                    if (x_is_out && !y_is_out) slip_index = slip_x_list[jump_id];
+                    else if (!x_is_out && y_is_out) slip_index = slip_y_list[jump_id];
                     else slip_index = reflect_list[jump_id];
 
                     int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
