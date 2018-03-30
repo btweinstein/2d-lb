@@ -775,6 +775,13 @@ void get_BC(
         if (*streamed_y >= ny) *streamed_y = ny - 1;
         if (*streamed_y < 0) *streamed_y = 0;
     }
+    if (BC_SPECIFIER == 2){ // No density on walls...TODO: There is a better way to handle adhesion to walls...
+        if (*streamed_x >= nx) *streamed_x = -1;
+        if (*streamed_x < 0) *streamed_x = -1;
+
+        if (*streamed_y >= ny) *streamed_y = -1;
+        if (*streamed_y < 0) *streamed_y = -1;
+    }
 }
 __kernel void
 add_interaction_force(
@@ -829,8 +836,16 @@ add_interaction_force(
             //Painfully deal with BC's...i.e. use periodic BC's.
             get_BC(&temp_x, &temp_y, BC_SPECIFIER, nx, ny);
 
-            local_fluid_1[row*buf_nx + idx_1D] = rho_global[fluid_index_1*ny*nx + temp_y*nx + temp_x];
-            local_fluid_2[row*buf_nx + idx_1D] = rho_global[fluid_index_2*ny*nx + temp_y*nx + temp_x];
+            double rho_to_use_1 = 0;
+            double rho_to_use_2 = 0;
+
+            if((temp_x != -1) && (temp_y != -1)){
+                rho_to_use_1 = rho_global[fluid_index_1*ny*nx + temp_y*nx + temp_x];
+                rho_to_use_2 = rho_global[fluid_index_2*ny*nx + temp_y*nx + temp_x];
+            }
+
+            local_fluid_1[row*buf_nx + idx_1D] = rho_to_use_1;
+            local_fluid_2[row*buf_nx + idx_1D] = rho_to_use_2;
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -959,8 +974,16 @@ add_interaction_force_second_belt(
             //Painfully deal with BC's...i.e. use periodic BC's.
             get_BC(&temp_x, &temp_y, BC_SPECIFIER, nx, ny);
 
-            local_fluid_1[row*buf_nx + idx_1D] = rho_global[fluid_index_1*ny*nx + temp_y*nx + temp_x];
-            local_fluid_2[row*buf_nx + idx_1D] = rho_global[fluid_index_2*ny*nx + temp_y*nx + temp_x];
+            double rho_to_use_1 = 0;
+            double rho_to_use_2 = 0;
+
+            if((temp_x != -1) && (temp_y != -1)){
+                rho_to_use_1 = rho_global[fluid_index_1*ny*nx + temp_y*nx + temp_x];
+                rho_to_use_2 = rho_global[fluid_index_2*ny*nx + temp_y*nx + temp_x];
+            }
+
+            local_fluid_1[row*buf_nx + idx_1D] = rho_to_use_1;
+            local_fluid_2[row*buf_nx + idx_1D] = rho_to_use_2;
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);

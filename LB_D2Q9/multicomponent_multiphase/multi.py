@@ -595,6 +595,8 @@ class Simulation_Runner(object):
             arguments += [int_type(0)]
         elif bc is 'zero_gradient':
             arguments += [int_type(1)]
+        elif bc is 'zero_density':
+            arguments += [int_type(2)]
         else:
             raise ValueError('Specified boundary condition does not exist')
 
@@ -744,6 +746,8 @@ class Simulation_Runner(object):
             arguments += [int_type(0)]
         elif bc is 'zero_gradient':
             arguments += [int_type(1)]
+        elif bc is 'zero_density':
+            arguments += [int_type(2)]
         else:
             raise ValueError('Specified boundary condition does not exist')
 
