@@ -465,7 +465,6 @@ move_with_bcs(
                     f_streamed_global[new_4d_index] = f_global[old_4d_index];
                 }
                 else if(bc_num == 2){ // No-slip BC
-
                     const int reflect_index = reflect_list[jump_id];
 
                     int old_4d_index = jump_id*num_populations*nx*ny + cur_field*nx*ny + y*nx + x;
@@ -474,6 +473,7 @@ move_with_bcs(
                     f_streamed_global[new_4d_index] = f_global[old_4d_index];
                 }
                 else if(bc_num == 3){ // Slip BC...if both or out you're at a corner, and bounce back.
+                    //TODO: THE SLIP BC APPEARS TO LEAK MASS SOMEHOW. NOT SURE WHY.
                     int x_is_out = ((stream_x >= nx)||(stream_x < 0));
                     int y_is_out = ((stream_y >= ny)||(stream_y < 0));
 
