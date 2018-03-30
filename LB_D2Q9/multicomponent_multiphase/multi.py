@@ -283,8 +283,9 @@ class Simulation_Runner(object):
 
         ## Initialize the node map...user is responsible for passing this in correctly.
         # The node map can have a DIFFERENT nx and ny...so we will have to translate between the two
-        self.bc_nx = bc_map.shape[0]
-        self.bc_ny = bc_map.shape[1]
+        self.bc_nx = int_type(bc_map.shape[0])
+        self.bc_ny = int_type(bc_map.shape[1])
+        self.bc_halo = (self.bc_nx - nx)/2
         self.bc_map = cl.array.to_device(self.queue, bc_map)
 
 

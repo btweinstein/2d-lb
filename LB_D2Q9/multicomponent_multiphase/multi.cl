@@ -406,16 +406,19 @@ __kernel void
 move_with_bcs(
     __global __read_only double *f_global,
     __global __write_only double *f_streamed_global,
-    __global __read_only int *bc_map,
-    __constant int *reflect_list,
-    __constant int *slip_x_list,
-    __constant int *slip_y_list,
     __constant int *cx,
     __constant int *cy,
     const int nx, const int ny,
     const int cur_field,
     const int num_populations,
-    const int num_jumpers)
+    const int num_jumpers,
+    __global __read_only int *bc_map,
+    const int nx_bc,
+    const int ny_bc,
+    const int bc_halo,
+    __constant int *reflect_list,
+    __constant int *slip_x_list,
+    __constant int *slip_y_list)
 {
     //Input should be a 2d workgroup!
     const int x = get_global_id(0);
@@ -472,7 +475,7 @@ move_with_bcs(
                 }
                 else if(bc_num == 3){ // Slip BC
 
-                    const int slip_index = -999999;
+                    int slip_index = -999999;
                     if ((stream_x >= nx)||(stream_x < 0)) slip_index = slip_x_list[jump_id];
                     else if ((stream_y >= ny)||(stream_y < 0)) slip_index = slip_y_list[jump_id];
 
