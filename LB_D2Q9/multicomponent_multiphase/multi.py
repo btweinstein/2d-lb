@@ -271,6 +271,8 @@ class Simulation_Runner(object):
         self.cs = None
         self.num_jumpers = None
         self.reflect_index = None
+        self.slip_x_index = None
+        self.slip_y_index = None
 
         self.allocate_constants()
 
@@ -423,10 +425,38 @@ class Simulation_Runner(object):
             opposite = (reflect_cx == cx) & (reflect_cy == cy)
             reflect_index[i] = np.where(opposite)[0][0]
 
+        # When you go out of bounds in the x direction...and need to reflect back keeping y momentum
+        slip_x_index = np.zeros(self.num_jumpers, order='F', dtype=int_type)
+        for i in range(slip_x_index.shape[0]):
+            cur_cx = cx[i]
+            cur_cy = cy[i]
+
+            reflect_cx = -cur_cx
+            reflect_cy = cur_cy
+
+            opposite = (reflect_cx == cx) & (reflect_cy == cy)
+            slip_x_index[i] = np.where(opposite)[0][0]
+
+        # When you go out of bounds in the y direction...and need to reflect back keeping x momentum
+        slip_y_index = np.zeros(self.num_jumpers, order='F', dtype=int_type)
+        for i in range(slip_y_index.shape[0]):
+            cur_cx = cx[i]
+            cur_cy = cy[i]
+
+            reflect_cx = cur_cx
+            reflect_cy = -cur_cy
+
+            opposite = (reflect_cx == cx) & (reflect_cy == cy)
+            slip_y_index[i] = np.where(opposite)[0][0]
+
         self.w = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=w)
         self.cx = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=cx)
         self.cy = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=cy)
         self.reflect_index = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=reflect_index)
+        self.slip_x_index = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
+                                       hostbuf=slip_x_index)
+        self.slip_y_index = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
+                                      hostbuf=slip_y_index)
 
     def add_eating_rate(self, eater_index, eatee_index, rate, eater_cutoff):
         """
@@ -915,12 +945,36 @@ class Simulation_RunnerD2Q25(Simulation_Runner):
             opposite = (reflect_cx == cx) & (reflect_cy == cy)
             reflect_index[i] = np.where(opposite)[0][0]
 
+        # When you go out of bounds in the x direction...and need to reflect back keeping y momentum
+        slip_x_index = np.zeros(self.num_jumpers, order='F', dtype=int_type)
+        for i in range(slip_x_index.shape[0]):
+            cur_cx = cx[i]
+            cur_cy = cy[i]
 
-        # Doing something stupid to get the slip BC on the top wall...because I can't figure out how to get
-        # these things in general.
+            reflect_cx = -cur_cx
+            reflect_cy = cur_cy
+
+            opposite = (reflect_cx == cx) & (reflect_cy == cy)
+            slip_x_index[i] = np.where(opposite)[0][0]
+
+        # When you go out of bounds in the y direction...and need to reflect back keeping x momentum
+        slip_y_index = np.zeros(self.num_jumpers, order='F', dtype=int_type)
+        for i in range(slip_y_index.shape[0]):
+            cur_cx = cx[i]
+            cur_cy = cy[i]
+
+            reflect_cx = cur_cx
+            reflect_cy = -cur_cy
+
+            opposite = (reflect_cx == cx) & (reflect_cy == cy)
+            slip_y_index[i] = np.where(opposite)[0][0]
 
         self.w = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=w)
         self.cx = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=cx)
         self.cy = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=cy)
         self.reflect_index = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
                                        hostbuf=reflect_index)
+        self.slip_x_index = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
+                                       hostbuf=slip_x_index)
+        self.slip_y_index = cl.Buffer(self.context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
+                                      hostbuf=slip_y_index)
