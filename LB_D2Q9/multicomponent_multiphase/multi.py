@@ -286,6 +286,7 @@ class Simulation_Runner(object):
         self.bc_nx = int_type(bc_map.shape[0])
         self.bc_ny = int_type(bc_map.shape[1])
         self.bc_halo = (self.bc_nx - nx)/2
+        bc_map = np.array(bc_map, dtype=num_type, order='F')
         self.bc_map = cl.array.to_device(self.queue, bc_map)
 
 
