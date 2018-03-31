@@ -836,8 +836,8 @@ add_interaction_force(
             //Painfully deal with BC's...i.e. use periodic BC's.
             get_BC(&temp_x, &temp_y, BC_SPECIFIER, nx, ny);
 
-            double rho_to_use_1 = 0;
-            double rho_to_use_2 = 0;
+            double rho_to_use_1 = 1.1;
+            double rho_to_use_2 = 1.1;
 
             if((temp_x != -1) && (temp_y != -1)){
                 rho_to_use_1 = rho_global[fluid_index_1*ny*nx + temp_y*nx + temp_x];
@@ -974,8 +974,8 @@ add_interaction_force_second_belt(
             //Painfully deal with BC's...i.e. use periodic BC's.
             get_BC(&temp_x, &temp_y, BC_SPECIFIER, nx, ny);
 
-            double rho_to_use_1 = 0;
-            double rho_to_use_2 = 0;
+            double rho_to_use_1 = 1.1;
+            double rho_to_use_2 = 1.1;
 
             if((temp_x != -1) && (temp_y != -1)){
                 rho_to_use_1 = rho_global[fluid_index_1*ny*nx + temp_y*nx + temp_x];
