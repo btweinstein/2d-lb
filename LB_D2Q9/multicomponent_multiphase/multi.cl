@@ -650,7 +650,7 @@ add_constant_g_force(
 __kernel void
 add_buoyancy_force(
     const int flow_field_num,
-    const int solute_field_num,
+    const double ref_density,
     const double g_x,
     const double g_y,
     __global double *Gx_global,
@@ -665,15 +665,12 @@ add_buoyancy_force(
 
     if ((x < nx) && (y < ny)){
         int flow_three_d_index = flow_field_num*nx*ny + y*nx + x;
-        int solute_three_d_index = solute_field_num*nx*ny + y*nx + x;
 
         double rho_flow = rho_global[flow_three_d_index];
-        double rho_solute = rho_global[solute_three_d_index];
-        double rho_tot = rho_flow + rho_solute;
 
         //TODO: Check to make sure that this buoyancy force is physical...should it also be impacting the diffusing field? Hmmm...
-        Gx_global[flow_three_d_index] += g_x*rho_solute;
-        Gy_global[flow_three_d_index] += g_y*rho_solute;
+        Gx_global[flow_three_d_index] += g_x*(rho_flow - ref_density);
+        Gy_global[flow_three_d_index] += g_y*(rho_flow - ref_density);
     }
 }
 
