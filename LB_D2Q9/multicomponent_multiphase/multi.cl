@@ -665,13 +665,13 @@ add_buoyancy_force(
 
     if ((x < nx) && (y < ny)){
         int flow_three_d_index = flow_field_num*nx*ny + y*nx + x;
-        int ref_three_d_index = solute_field_num*nx*ny + y*nx + x;
+        int ref_three_d_index = ref_field_num*nx*ny + y*nx + x;
 
         double rho_flow = rho_global[flow_three_d_index];
-        double rho_ref = rho_global[solute_three_d_index];
+        double rho_ref = rho_global[ref_three_d_index];
         double rho_dif = rho_flow - rho_ref;
 
-        //TODO: Check to make sure that this buoyancy force is physical...should it also be impacting the diffusing field? Hmmm...
+        //TODO: This is currently nonsense. lol. Be careful!
         Gx_global[flow_three_d_index] += g_x*rho_ref;
         Gy_global[flow_three_d_index] += g_y*rho_ref;
     }
