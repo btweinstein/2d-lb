@@ -640,7 +640,7 @@ add_constant_g_force(
 
         double rho = rho_global[three_d_index];
 
-        // Rembmer, force PER density! In *dimensionless* units.
+        // Remember, force PER density! In *dimensionless* units.
         Gx_global[three_d_index] += g_x*rho;
         Gy_global[three_d_index] += g_y*rho;
 
