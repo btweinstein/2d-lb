@@ -648,9 +648,50 @@ add_constant_g_force(
 }
 
 __kernel void
-add_buoyancy_force(
+add_boussinesq_force(
+    const int flow_field_num,
+    const int solute_field_num,
+    const double rho_cutoff,
+    const double g_x,
+    const double g_y,
+    __global double *Gx_global,
+    __global double *Gy_global,
+    __global double *rho_global,
+    const int nx, const int ny
+)
+{
+    //Input should be a 2d workgroup! Loop over the third dimension.
+    const int x = get_global_id(0);
+    const int y = get_global_id(1);
+
+    if ((x < nx) && (y < ny)){
+        int flow_three_d_index = flow_field_num*nx*ny + y*nx + x;
+        int solute_three_d_index = solute_field_num*nx*ny + y*nx + x;
+
+        double rho_flow = rho_global[flow_three_d_index];
+        double rho_solute = rho_global[solute_three_d_index];
+
+        double force_x, force_y;
+
+        if rho_flow < rho_cutoff{ // Not in the fluid anymore
+            force_x = 0;
+            force_y = 0;
+        }
+        else{
+            force_x = g_x*rho_solute;
+            force_y = g_y*rho_solute;
+        }
+
+        Gx_global[flow_three_d_index] += force_x;
+        Gy_global[flow_three_d_index] += force_y;
+    }
+}
+
+__kernel void
+add_buoyancy_difference(
     const int flow_field_num,
     const int ref_field_num,
+    const double rho_cutoff,
     const double g_x,
     const double g_y,
     __global double *Gx_global,
@@ -671,9 +712,20 @@ add_buoyancy_force(
         double rho_ref = rho_global[ref_three_d_index];
         double rho_dif = rho_flow - rho_ref;
 
+        double force_x, force_y;
+
+        if rho_flow < rho_cutoff{ // Not in the fluid anymore
+            force_x = 0;
+            force_y = 0;
+        }
+        else{
+            force_x = g_x*rho_dif;
+            force_y = g_y*rho_dif;
+        }
+
         //TODO: This is currently nonsense. lol. Be careful!
-        Gx_global[flow_three_d_index] += g_x*rho_ref;
-        Gy_global[flow_three_d_index] += g_y*rho_ref;
+        Gx_global[flow_three_d_index] += force_x;
+        Gy_global[flow_three_d_index] += force_y;
     }
 }
 
