@@ -500,12 +500,28 @@ class Simulation_Runner(object):
 
         self.additional_forces.append([kernel_to_run, arguments])
 
-    def add_buoyancy_force(self, flow_field_num, ref_field_num, g_x, g_y):
+    def add_boussinesq_force(self, flow_field_num, solute_field_num, rho_cutoff, solute_ref_density, g_x, g_y):
 
-        kernel_to_run = self.kernels.add_buoyancy_force
+        kernel_to_run = self.kernels.add_boussinesq_force
         arguments = [
             self.queue, self.two_d_global_size, self.two_d_local_size,
-            int_type(flow_field_num), int_type(ref_field_num),
+            int_type(flow_field_num), int_type(solute_field_num),
+            num_type(rho_cutoff), num_type(solute_ref_density),
+            num_type(g_x), num_type(g_y),
+            self.Gx.data, self.Gy.data,
+            self.rho.data,
+            self.nx, self.ny
+        ]
+
+        self.additional_forces.append([kernel_to_run, arguments])
+
+    def add_buoyancy_difference(self, flow_field_num, rho_cutoff, rho_ref, g_x, g_y):
+
+        kernel_to_run = self.kernels.add_buoyancy_difference
+        arguments = [
+            self.queue, self.two_d_global_size, self.two_d_local_size,
+            int_type(flow_field_num), num_type(rho_cutoff),
+            num_type(rho_ref),
             num_type(g_x), num_type(g_y),
             self.Gx.data, self.Gy.data,
             self.rho.data,

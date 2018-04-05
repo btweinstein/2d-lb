@@ -652,6 +652,7 @@ add_boussinesq_force(
     const int flow_field_num,
     const int solute_field_num,
     const double rho_cutoff,
+    const double solute_ref_density,
     const double g_x,
     const double g_y,
     __global double *Gx_global,
@@ -670,16 +671,17 @@ add_boussinesq_force(
 
         double rho_flow = rho_global[flow_three_d_index];
         double rho_solute = rho_global[solute_three_d_index];
+        double delta_rho = rho_solute - solute_ref_density;
 
         double force_x, force_y;
 
-        if rho_flow < rho_cutoff{ // Not in the fluid anymore
+        if(rho_flow < rho_cutoff){ // Not in the main fluid anymore
             force_x = 0;
             force_y = 0;
         }
         else{
-            force_x = g_x*rho_solute;
-            force_y = g_y*rho_solute;
+            force_x = g_x*delta_rho;
+            force_y = g_y*delta_rho;
         }
 
         Gx_global[flow_three_d_index] += force_x;
@@ -690,8 +692,8 @@ add_boussinesq_force(
 __kernel void
 add_buoyancy_difference(
     const int flow_field_num,
-    const int ref_field_num,
     const double rho_cutoff,
+    const double rho_ref,
     const double g_x,
     const double g_y,
     __global double *Gx_global,
@@ -706,21 +708,18 @@ add_buoyancy_difference(
 
     if ((x < nx) && (y < ny)){
         int flow_three_d_index = flow_field_num*nx*ny + y*nx + x;
-        int ref_three_d_index = ref_field_num*nx*ny + y*nx + x;
-
         double rho_flow = rho_global[flow_three_d_index];
-        double rho_ref = rho_global[ref_three_d_index];
-        double rho_dif = rho_flow - rho_ref;
+        double rho_diff = rho_flow - rho_ref;
 
         double force_x, force_y;
 
-        if rho_flow < rho_cutoff{ // Not in the fluid anymore
+        if (rho_flow < rho_cutoff){ // Not in the fluid anymore
             force_x = 0;
             force_y = 0;
         }
         else{
-            force_x = g_x*rho_dif;
-            force_y = g_y*rho_dif;
+            force_x = g_x*rho_diff;
+            force_y = g_y*rho_diff;
         }
 
         //TODO: This is currently nonsense. lol. Be careful!
