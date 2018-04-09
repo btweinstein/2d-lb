@@ -33,20 +33,20 @@ update_feq_fluid(
 
         int three_d_index = field_num*nx*ny + two_d_index;
 
-        double rho = rho_global[three_d_index];
+        const double rho = rho_global[three_d_index];
         const double u = u_bary_global[two_d_index];
         const double v = v_bary_global[two_d_index];
 
         // Now loop over every jumper
         for(int jump_id=0; jump_id < num_jumpers; jump_id++){
-            int four_d_index = jump_id*num_populations*nx*ny + three_d_index;
+            const int four_d_index = jump_id*num_populations*nx*ny + three_d_index;
 
-            double w = w_arr[jump_id];
-            int cx = cx_arr[jump_id];
-            int cy = cy_arr[jump_id];
+            const double w = w_arr[jump_id];
+            const int cx = cx_arr[jump_id];
+            const int cy = cy_arr[jump_id];
 
-            double c_dot_u = cx*u + cy*v;
-            double u_squared = u*u + v*v;
+            const double c_dot_u = cx*u + cy*v;
+            const double u_squared = u*u + v*v;
 
             double new_feq = 0;
             if (num_jumpers == 9){ //D2Q9
