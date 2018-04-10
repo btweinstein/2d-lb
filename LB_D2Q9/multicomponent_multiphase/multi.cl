@@ -114,6 +114,9 @@ collide_particles_fluid(
         const double Gx = Gx_global[three_d_index];
         const double Gy = Gy_global[three_d_index];
 
+        const double cs_squared = cs*cs;
+        const double cs_fourth = cs*cs*cs*cs;
+        const double Fi_prefactor = (1 - .5*omega);
 
         for(int jump_id=0; jump_id < num_jumpers; jump_id++){
             int four_d_index = jump_id*num_populations*ny*nx + three_d_index;
@@ -126,10 +129,10 @@ collide_particles_fluid(
 
             double w = w_arr[jump_id];
 
-            double Fi = (1 - .5*omega)*w*(
-                c_dot_F/(cs*cs)
-                + c_dot_F*c_dot_u/(cs*cs*cs*cs)
-                - u_dot_F/(cs*cs)
+            double Fi = Fi_prefactor*w*(
+                c_dot_F/cs_squared
+                + c_dot_F*c_dot_u/cs_fourth
+                - u_dot_F/cs_squared
             );
 
             f_global[four_d_index] = relax + Fi;
