@@ -38,6 +38,13 @@ update_feq_fluid(
         const double v = v_bary_global[two_d_index];
 
         // Now loop over every jumper
+
+        const double cs_squared = cs*cs;
+        const double two_cs_squared = 2*cs_squared;
+        const double three_cs_squared = 3*cs_squared;
+        const double two_cs_fourth = 2*cs*cs*cs*cs;
+        const double six_cs_sixth = 6*cs*cs*cs*cs*cs*cs;
+
         for(int jump_id=0; jump_id < num_jumpers; jump_id++){
             const int four_d_index = jump_id*num_populations*nx*ny + three_d_index;
 
@@ -52,20 +59,20 @@ update_feq_fluid(
             if (num_jumpers == 9){ //D2Q9
                 new_feq =
                 w*rho*(
-                1.f
-                + c_dot_u/(cs*cs)
-                + (c_dot_u*c_dot_u)/(2*pow(cs,4))
-                - u_squared/(2*cs*cs)
+                1
+                + c_dot_u/cs_squared
+                + (c_dot_u*c_dot_u)/(two_cs_fourth)
+                - u_squared/(two_cs_squared)
                 );
             }
             else if(num_jumpers == 25){ //D2Q25
                 new_feq =
                 w*rho*(
-                1.f
-                + c_dot_u/(cs*cs)
-                + (c_dot_u*c_dot_u)/(2*pow(cs,4))
-                - u_squared/(2*cs*cs)
-                + (c_dot_u * (c_dot_u*c_dot_u - 3*cs*cs*u_squared))/(6*pow(cs,6))
+                1
+                + c_dot_u/cs_squared
+                + (c_dot_u*c_dot_u)/(two_cs_fourth)
+                - u_squared/(two_cs_squared)
+                + (c_dot_u * (c_dot_u*c_dot_u - three_cs_squared*u_squared))/(six_cs_sixth)
                 );
             }
 
@@ -121,7 +128,7 @@ collide_particles_fluid(
 
             double Fi = (1 - .5*omega)*w*(
                 c_dot_F/(cs*cs)
-                + c_dot_F*c_dot_u/pow(cs,4)
+                + c_dot_F*c_dot_u/(cs*cs*cs*cs)
                 - u_dot_F/(cs*cs)
             );
 
