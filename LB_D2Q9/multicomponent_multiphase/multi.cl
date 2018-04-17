@@ -864,7 +864,8 @@ add_interaction_force(
     const int num_jumpers,
     const int BC_SPECIFIER,
     const int PSI_SPECIFIER,
-    __constant double *parameters)
+    __constant double *parameters,
+    const double rho_wall)
 {
     const int x = get_global_id(0);
     const int y = get_global_id(1);
@@ -897,8 +898,8 @@ add_interaction_force(
             //Painfully deal with BC's...i.e. use periodic BC's.
             get_BC(&temp_x, &temp_y, BC_SPECIFIER, nx, ny);
 
-            double rho_to_use_1 = 1.1;
-            double rho_to_use_2 = 1.1;
+            double rho_to_use_1 = rho_wall;
+            double rho_to_use_2 = rho_wall;
 
             if((temp_x != -1) && (temp_y != -1)){
                 rho_to_use_1 = rho_global[fluid_index_1*ny*nx + temp_y*nx + temp_x];
@@ -1002,7 +1003,8 @@ add_interaction_force_second_belt(
     const int halo,
     const int BC_SPECIFIER,
     const int PSI_SPECIFIER,
-    __constant double *parameters)
+    __constant double *parameters,
+    const double rho_wall)
 {
     const int x = get_global_id(0);
     const int y = get_global_id(1);
@@ -1035,8 +1037,8 @@ add_interaction_force_second_belt(
             //Painfully deal with BC's...i.e. use periodic BC's.
             get_BC(&temp_x, &temp_y, BC_SPECIFIER, nx, ny);
 
-            double rho_to_use_1 = 1.1;
-            double rho_to_use_2 = 1.1;
+            double rho_to_use_1 = rho_wall;
+            double rho_to_use_2 = rho_wall;
 
             if((temp_x != -1) && (temp_y != -1)){
                 rho_to_use_1 = rho_global[fluid_index_1*ny*nx + temp_y*nx + temp_x];

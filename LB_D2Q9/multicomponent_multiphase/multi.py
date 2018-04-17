@@ -572,7 +572,7 @@ class Simulation_Runner(object):
     ############################################
 
     def add_interaction_force(self, fluid_1_index, fluid_2_index, G_int, bc='periodic', potential='linear',
-                              potential_parameters=None):
+                              potential_parameters=None, rho_wall = None):
 
         # We use the D2Q9 stencil for this force
         w_arr = np.array([4. / 9., 1. / 9., 1. / 9., 1. / 9., 1. / 9., 1. / 36.,
@@ -637,10 +637,14 @@ class Simulation_Runner(object):
 
         arguments += [parameters_const]
 
+        if rho_wall is None:
+            rho_wall = 1.0
+        arguments += [num_type(rho_wall)]
+
         self.additional_forces.append([kernel_to_run, arguments])
 
     def add_interaction_force_second_belt(self, fluid_1_index, fluid_2_index, G_int, bc='periodic', potential='linear',
-                                          potential_parameters=None):
+                                          potential_parameters=None, rho_wall=None):
 
         #### pi1 ####
         pi1 = []
@@ -787,6 +791,10 @@ class Simulation_Runner(object):
                                      hostbuf=potential_parameters)
 
         arguments += [parameters_const]
+
+        if rho_wall is None:
+            rho_wall = 1.0
+        arguments += [num_type(rho_wall)]
 
         self.additional_forces.append([kernel_to_run, arguments])
 
