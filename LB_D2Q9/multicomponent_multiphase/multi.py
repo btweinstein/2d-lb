@@ -544,6 +544,30 @@ class Simulation_Runner(object):
 
         self.additional_forces.append([kernel_to_run, arguments])
 
+    def add_skin_friction(self, fluid_index, friction_coeff, u_input, v_input):
+
+        kernel_to_run = self.kernels.add_skin_friction
+
+        # Convert u_input and v_input into gpu arrays.
+        u_input = np.array(u_input, order='F', dtype=num_type)
+        u_input_gpu = cl.array.to_device(self.queue, u_input)
+
+        v_input = np.array(v_input, order='F', dtype=num_type)
+        v_input_gpu = cl.array.to_device(self.queue, v_input)
+
+        arguments = [
+            self.queue, self.two_d_global_size, self.two_d_local_size,
+            int_type(fluid_index),
+            num_type(friction_coeff),
+            u_input_gpu.data, v_input_gpu.data,
+            self.u_bary.data, self.v_bary.data,
+            self.Gx.data, self.Gy.data,
+            self.rho.data,
+            self.nx, self.ny
+        ]
+
+        self.additional_forces.append([kernel_to_run, arguments])
+
     ##### Dealing with Poisson Repulsion. ###########
     def add_screened_poisson_force(self, source_index, force_index, interaction_length, amplitude):
 
