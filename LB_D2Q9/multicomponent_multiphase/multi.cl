@@ -778,6 +778,39 @@ add_radial_g_force(
     }
 }
 
+__kernel void
+add_skin_friction(
+    const int field_num,
+    const double friction_coeff,
+    __global double *u_input_global,
+    __global double *v_input_global,
+    __global double *u_bary_global,
+    __global double *v_bary_global,
+    __global double *Gx_global,
+    __global double *Gy_global,
+    __global double *rho_global,
+    const int nx, const int ny
+)
+{
+    //Input should be a 2d workgroup! Loop over the third dimension.
+    const int x = get_global_id(0);
+    const int y = get_global_id(1);
+
+    if ((x < nx) && (y < ny)){
+        int three_d_index = field_num*nx*ny + y*nx + x;
+
+        double rho = rho_global[three_d_index];
+        double u_bary = u_bary_global[three_d_index];
+        double v_bary = v_bary_global[three_d_index];
+        double u_input = u_input_global[three_d_index];
+        double v_input = v_input_global[three_d_index];
+
+        // Force is proportional to difference in velocities
+        Gx_global[three_d_index] += rho*friction_coeff*(u_input - u_bary);
+        Gy_global[three_d_index] += rho*friction_coeff*(v_input - v_bary);
+    }
+}
+
 void get_psi(
     const int PSI_SPECIFIER,
     double rho_1, double rho_2,
