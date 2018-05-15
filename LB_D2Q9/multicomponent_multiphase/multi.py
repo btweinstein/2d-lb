@@ -551,7 +551,7 @@ class Simulation_Runner(object):
         # Convert u_input and v_input into gpu arrays.
         u_input = np.array(u_input, order='F', dtype=num_type)
         u_input_gpu = cl.array.to_device(self.queue, u_input)
-
+ 
         v_input = np.array(v_input, order='F', dtype=num_type)
         v_input_gpu = cl.array.to_device(self.queue, v_input)
 
